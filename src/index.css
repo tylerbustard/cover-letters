@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Apple's 2024 Color System */
+  --background: #f5f5f7;
+  --foreground: hsl(0 0% 6%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 6%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 6%);
+  --primary: hsl(212 100% 50%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(0 0% 45%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(0 0% 98%);
+  --muted-foreground: hsl(0 0% 45%);
+  --accent: hsl(0 0% 96%);
+  --accent-foreground: hsl(0 0% 6%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(0 0% 92%);
+  --input: hsl(0 0% 96%);
+  --ring: hsl(212 100% 50%);
+  --radius: 1rem;
+  
+  /* Clean Effects */
+  --glass-bg: hsl(0 0% 100%);
+  --glass-border: hsl(0 0% 90%);
+  --glass-shadow: hsla(0 0% 0% / 0.1);
+  
+  /* Apple Typography - SF Pro Font System */
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-text);
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Print Styles for Cover Letter PDF Generation */
+@media print {
+  /* Set page size to US Letter (8.5 x 11 inches) */
+  @page {
+    size: letter;
+    margin: 0.5in 0.75in;
+  }
+
+  /* Hide all UI elements except cover letter content */
+  nav,
+  header,
+  footer,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Hide header section with title and selectors */
+  .max-w-6xl > div:first-child,
+  .max-w-6xl > div:nth-child(2),
+  .max-w-6xl > div:nth-child(3) {
+    display: none !important;
+  }
+
+  /* Reset backgrounds and containers */
+  .min-h-screen {
+    background: white !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  .max-w-6xl,
+  .max-w-4xl {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Cover letter page specific - Single page with exact UI */
+  .cover-letter-page {
+    background: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0.5in 0.75in !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Preserve exact UI styling */
+  .bg-white {
+    background: white !important;
+  }
+
+  /* Typography - Preserve sizes */
+  h1 {
+    font-size: 28pt !important;
+  }
+
+  h2 {
+    font-size: 16pt !important;
+  }
+
+  p,
+  li,
+  span {
+    font-size: 10pt !important;
+  }
+
+  .text-sm {
+    font-size: 9pt !important;
+  }
+
+  .text-base {
+    font-size: 10pt !important;
+  }
+
+  .text-xs {
+    font-size: 8pt !important;
+  }
+
+  /* Ensure colors print exactly */
+  .text-blue-600 {
+    color: #2563eb !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .text-blue-500 {
+    color: #3b82f6 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .text-red-600 {
+    color: #dc2626 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .text-red-500 {
+    color: #ef4444 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .text-gray-900 {
+    color: #111827 !important;
+  }
+
+  .text-gray-700 {
+    color: #374151 !important;
+  }
+
+  .text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  /* Icons - make sure they print */
+  svg {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Remove all shadows and effects for clean print */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure links are properly styled for print */
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Keep elements together */
+  .cover-letter-page > * {
+    page-break-inside: avoid !important;
+  }
+}
+
