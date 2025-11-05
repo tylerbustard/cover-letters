@@ -3,6 +3,7 @@ import queensLogo from '@/assets/queens-logo.png'
 import unbLogo from '@/assets/unb-logo.png'
 import uoftLogo from '@/assets/uoft-logo.png'
 import mcgillLogo from '@/assets/mcgill-logo.png'
+import signatureImage from '@/assets/tyler-signature.png'
 
 import { CoverLetterData, VariationId } from '@/types'
 
@@ -15,10 +16,13 @@ export interface VariationConfig {
   accentDark: string
   tagline: string
   organization: string
+  summary: string
   logoSrc: string
   logoAlt: string
   profileSrc: string
   profileAlt: string
+  signatureSrc: string
+  signatureAlt: string
   defaults: Pick<CoverLetterData, 'yourName' | 'yourEmail' | 'yourPhone' | 'yourWebsite' | 'yourAddress'>
 }
 
@@ -32,10 +36,14 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     accentDark: '#0a2740',
     tagline: 'Finance & Technology Professional',
     organization: "Queen's University",
+    summary:
+      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
     logoSrc: queensLogo,
     logoAlt: "Queen's University crest",
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
+    signatureSrc: signatureImage,
+    signatureAlt: 'Handwritten signature of Tyler Bustard',
     defaults: {
       yourName: 'Tyler Bustard',
       yourEmail: 'tyler@tylerbustard.net',
@@ -53,10 +61,14 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     accentDark: '#7a0212',
     tagline: 'Finance & Technology Professional',
     organization: 'University of New Brunswick',
+    summary:
+      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
     logoSrc: unbLogo,
     logoAlt: 'University of New Brunswick crest',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
+    signatureSrc: signatureImage,
+    signatureAlt: 'Handwritten signature of Tyler Bustard',
     defaults: {
       yourName: 'Tyler Bustard',
       yourEmail: 'tyler@tylerbustard.ca',
@@ -74,10 +86,14 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     accentDark: '#12397a',
     tagline: 'Finance & Technology Professional',
     organization: 'Rotman School of Management',
+    summary:
+      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
     logoSrc: uoftLogo,
     logoAlt: 'Rotman School of Management crest',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
+    signatureSrc: signatureImage,
+    signatureAlt: 'Handwritten signature of Tyler Bustard',
     defaults: {
       yourName: 'Tyler Bustard',
       yourEmail: 'tyler@tylerbustard.info',
@@ -95,10 +111,14 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     accentDark: '#7f0d14',
     tagline: 'Finance & Technology Professional',
     organization: 'McGill University',
+    summary:
+      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
     logoSrc: mcgillLogo,
     logoAlt: 'McGill University crest',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
+    signatureSrc: signatureImage,
+    signatureAlt: 'Handwritten signature of Tyler Bustard',
     defaults: {
       yourName: 'Tyler Bustard',
       yourEmail: 'tyler@tylerbustard.com',

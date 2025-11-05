@@ -20,8 +20,8 @@ import { type CoverLetterData, type VariationId } from '@/types'
 type FieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 
 const createInitialData = (config: VariationConfig): CoverLetterData => ({
-  companyName: '',
-  position: '',
+  companyName: '[Company Name]',
+  position: '[Role Title]',
   hiringManager: 'Hiring Manager',
   date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
   yourName: config.defaults.yourName,
@@ -29,12 +29,17 @@ const createInitialData = (config: VariationConfig): CoverLetterData => ({
   yourPhone: config.defaults.yourPhone,
   yourWebsite: config.defaults.yourWebsite,
   yourAddress: config.defaults.yourAddress,
-  companyAddress: '',
-  openingParagraph: '',
-  bodyParagraph1: '',
-  bodyParagraph2: '',
-  bodyParagraph3: '',
-  closingParagraph: '',
+  companyAddress: '123 Example Street\nCity, Province Postal Code',
+  openingParagraph:
+    'I am writing to express my interest in the [Role Title] position at [Company Name]. I am energized by the opportunity to bring my blend of finance and technology experience to your team.',
+  bodyParagraph1:
+    'In my current role, I [add a quantifiable achievement that demonstrates how you deliver measurable impact aligned with the position].',
+  bodyParagraph2:
+    'I am especially drawn to [Company Name] because [share a reason that connects your values, industry focus, or recent initiatives].',
+  bodyParagraph3:
+    'Beyond my technical background, I bring [highlight a leadership, collaboration, or client-facing strength that differentiates you].',
+  closingParagraph:
+    'Thank you for considering my application. I would welcome the chance to discuss how I can support the [Role Title] mandate at [Company Name].',
 })
 
 const buildPlainTextLetter = (data: CoverLetterData) => {
@@ -103,6 +108,12 @@ const buildPdfHtml = (data: CoverLetterData, config: VariationConfig) => {
     : ''
 
   const contactBlock = contactChips ? `<div class="contact">${contactChips}</div>` : ''
+  const summaryHtml = config.summary
+    ? `<p class="summary">${escapeHtml(config.summary)}</p>`
+    : ''
+  const signatureHtml = config.signatureSrc
+    ? `<div class="signature-image"><img src="${config.signatureSrc}" alt="${escapeHtml(config.signatureAlt)}" /></div>`
+    : ''
   const recipientBlock = recipientHtml ? `<div class="recipient">${recipientHtml}</div>` : ''
   const metaBlock = dateHtml || recipientBlock ? `<div class="meta">${dateHtml}${recipientBlock}</div>` : ''
   const logoHtml = config.logoSrc
@@ -127,6 +138,7 @@ const buildPdfHtml = (data: CoverLetterData, config: VariationConfig) => {
     .logo img { max-width: 40px; max-height: 40px; object-fit: contain; }
     .contact { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #4b5563; }
     .contact span { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; background: ${config.accentLight}; border: 1px solid ${config.accent}1a; }
+    .summary { font-size: 13px; color: #374151; line-height: 1.7; border-top: 1px solid #e5e7eb; margin-top: 18px; padding-top: 18px; }
     .meta { font-size: 13px; color: #4b5563; margin-bottom: 22px; }
     .recipient { margin-top: 10px; }
     .opportunity { margin-bottom: 24px; padding: 16px 18px; border-radius: 16px; background: ${config.accentLight}; color: ${config.accentDark}; }
@@ -136,6 +148,8 @@ const buildPdfHtml = (data: CoverLetterData, config: VariationConfig) => {
     .greeting { font-size: 14px; font-weight: 600; color: ${config.accentDark}; margin-bottom: 16px; }
     .body p { margin: 0 0 16px; text-align: justify; }
     .closing { margin-top: 32px; font-size: 14px; }
+    .signature-image { margin: 12px 0; }
+    .signature-image img { height: 48px; width: auto; object-fit: contain; filter: grayscale(100%); }
   </style>
 </head>
 <body>
@@ -149,6 +163,7 @@ const buildPdfHtml = (data: CoverLetterData, config: VariationConfig) => {
       ${logoHtml}
     </div>
     ${contactBlock}
+    ${summaryHtml}
     ${metaBlock}
     <div class="opportunity">
       <div class="opportunity-label">Opportunity Focus</div>
@@ -159,6 +174,7 @@ const buildPdfHtml = (data: CoverLetterData, config: VariationConfig) => {
     <div class="body">${paragraphsHtml}</div>
     <div class="closing">
       <p>Sincerely,</p>
+      ${signatureHtml}
       <p>${escapeHtml(data.yourName)}</p>
     </div>
   </div>
