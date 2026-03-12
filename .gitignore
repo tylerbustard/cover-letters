@@ -30,3 +30,7 @@ cf_tunnel_*.pid
 cf_tunnel_*.log
 dev_server_*.log
 
+# Local assistant / handoff artifacts
+PROJECT_HANDOFF.md
+src/CLAUDE.md
+unified-app/

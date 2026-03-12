@@ -1,8 +1,17 @@
 import { type CSSProperties } from 'react'
 import { Mail, Phone, Globe, MapPin, type LucideIcon } from 'lucide-react'
 
-import { type VariationConfig } from '@/config/variations'
-import { getContactItems, getLetterParagraphs, getRecipientLines, getOpportunitySummary, type ContactItem } from '@/lib/letter'
+import {
+  createDocumentVisualStyle,
+  DocumentHeader,
+} from '@/components/document-primitives'
+import type {
+  CoverLetterTemplate,
+  DocumentLayoutMode,
+  PresentationContactLayout,
+  PresentationDensity,
+} from '@/types'
+import { getContactItems, getLetterParagraphs, getRecipientLines, type ContactItem } from '@/lib/letter'
 import { cn } from '@/lib/utils'
 import { type CoverLetterData } from '@/types'
 
@@ -46,13 +55,9 @@ const LetterBody = ({
   const greetingName = data.hiringManager.trim() || 'Hiring Manager'
 
   return (
-    <div className={cn('text-[15px] leading-relaxed text-gray-800', contentWrapperClassName)}>
-      {data.date.trim().length > 0 && (
-        <p className="text-sm text-gray-600 mb-6">{data.date}</p>
-      )}
-
+    <div className={cn('cover-letter-body', contentWrapperClassName)}>
       {recipientLines.length > 0 && (
-        <div className="text-sm text-gray-700 mb-6 space-y-1">
+        <div className="cover-letter-recipient">
           {recipientLines.map((line, index) => (
             <p key={index}>{line}</p>
           ))}
@@ -60,13 +65,13 @@ const LetterBody = ({
       )}
 
       <div
-        className="text-base font-medium mb-5"
+        className="cover-letter-greeting"
         style={greetingColor ? { color: greetingColor } : undefined}
       >
         Dear {greetingName},
       </div>
 
-      <div className={cn('space-y-5 text-gray-800', paragraphsClassName)}>
+      <div className={cn('cover-letter-paragraphs', paragraphsClassName)}>
         {paragraphs.map((paragraph, index) => (
           <p key={index} className="whitespace-pre-line">
             {paragraph}
@@ -74,10 +79,10 @@ const LetterBody = ({
         ))}
       </div>
 
-      <div className="mt-8 text-gray-900">
-        <p className="mb-2">Sincerely,</p>
+      <div className="cover-letter-signoff">
+        <p className="cover-letter-signoff-label">Sincerely,</p>
         {signatureSrc && (
-          <div className="mb-2">
+          <div className="cover-letter-signature-image">
             <img
               src={signatureSrc}
               alt={signatureAlt ?? `${data.yourName} signature`}
@@ -87,7 +92,7 @@ const LetterBody = ({
           </div>
         )}
         <p
-          className="font-semibold text-gray-900"
+          className="cover-letter-signoff-name"
           style={signatureColor ? { color: signatureColor } : undefined}
         >
           {data.yourName}
@@ -97,94 +102,79 @@ const LetterBody = ({
   )
 }
 
+type CoverLetterPreviewConfig = CoverLetterTemplate['config']
+
 interface PreviewProps {
   data: CoverLetterData
-  config: VariationConfig
+  config: CoverLetterPreviewConfig
+  showAvatar: boolean
 }
 
-const CoverLetterHeader = ({ data, config }: PreviewProps) => {
+const CoverLetterHeader = ({ data, config, showAvatar }: PreviewProps) => {
   const contactItems = getContactItems(data)
+  const title = config.tagline.trim().length > 0 ? config.tagline : config.organization
 
   return (
-    <header className="mb-10 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <img
-            src={config.profileSrc}
-            alt={config.profileAlt}
-            className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg object-cover"
-          />
-          <div>
-            <span className="text-xs uppercase tracking-[0.28em] text-gray-500 block mb-1">
-              {config.organization}
-            </span>
-            <h2 className="text-3xl font-semibold text-gray-900 tracking-tight">
-              {data.yourName}
-            </h2>
-            <p className="text-base font-semibold" style={{ color: config.accent }}>
-              {config.tagline}
-            </p>
-          </div>
-        </div>
-
-        <div
-          className="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl border shadow-sm"
-          style={{
-            borderColor: `${config.accent}26`,
-            backgroundColor: config.accentLight,
-          }}
-        >
-          <img src={config.logoSrc} alt={config.logoAlt} className="max-w-10 max-h-10 object-contain" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-        {contactItems.map((item) => {
-          const Icon = CONTACT_ICONS[item.type]
-
-          return (
-            <div
-              key={item.type}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-gray-700 shadow-sm"
-            >
-              <Icon className="w-4 h-4" style={{ color: config.accent }} />
-              <span className="font-medium">{item.value}</span>
-            </div>
-          )
-        })}
-      </div>
-
-      <p className="text-sm text-gray-700 leading-relaxed border-t border-gray-200 pt-4">
-        {config.summary}
-      </p>
-
-      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-gray-500">
-        <span className="font-semibold text-gray-700">Opportunity:</span>
-        <span className="text-gray-600">{getOpportunitySummary(data)}</span>
-      </div>
-    </header>
+    <DocumentHeader
+      name={data.yourName}
+      title={title}
+      profileSrc={config.profileSrc}
+      profileAlt={config.profileAlt}
+      contactItems={contactItems.map((item) => ({
+        key: item.type,
+        icon: CONTACT_ICONS[item.type],
+        value: item.value,
+      }))}
+      summary={config.summary}
+      className="cover-letter-header"
+      showAvatar={showAvatar}
+    />
   )
 }
 
 export interface CoverLetterPreviewProps {
   data: CoverLetterData
-  config: VariationConfig
+  config: CoverLetterPreviewConfig
+  density: PresentationDensity
+  showAvatar: boolean
+  contactLayout: PresentationContactLayout
+  layoutMode?: DocumentLayoutMode
 }
 
-export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) => (
-  <div
-    className="bg-white rounded-3xl shadow-xl border border-gray-200 print:shadow-none print:border-0"
-    style={LETTER_BASE_STYLE}
-  >
-    <CoverLetterHeader data={data} config={config} />
-    <LetterBody
-      data={data}
-      greetingColor={config.accentDark}
-      signatureColor={config.accentDark}
-      signatureSrc={config.signatureSrc}
-      signatureAlt={config.signatureAlt}
-    />
-  </div>
-)
+export const CoverLetterPreview = ({
+  data,
+  config,
+  density,
+  showAvatar,
+  contactLayout,
+  layoutMode = 'screen',
+}: CoverLetterPreviewProps) => {
+  const styleVars: CSSProperties = {
+    ...LETTER_BASE_STYLE,
+    ...createDocumentVisualStyle({
+      accent: config.accent,
+      accentSoft: config.accentLight,
+      accentDark: config.accentDark,
+    }),
+  } as CSSProperties
 
-
+  return (
+    <div
+      className="cover-letter-preview print:shadow-none print:border-0"
+      style={styleVars}
+      data-density={density}
+      data-contact-layout={contactLayout}
+      data-avatar={showAvatar ? 'visible' : 'hidden'}
+      data-layout-mode={layoutMode}
+    >
+      <CoverLetterHeader data={data} config={config} showAvatar={showAvatar} />
+      <LetterBody
+        data={data}
+        greetingColor={config.accentDark}
+        signatureColor={config.accentDark}
+        signatureSrc={config.signatureSrc}
+        signatureAlt={config.signatureAlt}
+      />
+    </div>
+  )
+}
