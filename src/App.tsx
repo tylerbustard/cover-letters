@@ -1,83 +1,57 @@
-import { type ChangeEvent, useEffect, useState } from 'react'
-import { Download, FileText } from 'lucide-react'
+
+import { useMemo, useState } from 'react'
+import { Download, Mail } from 'lucide-react'
 
 import { CoverLetterPreview } from '@/components/cover-letter-preview'
-import { COVER_LETTER_VARIATIONS, VARIATION_MAP, type VariationConfig } from '@/config/variations'
-import {
-  getContactItems,
-  getLetterParagraphs,
-  getOpportunitySummary,
-  getRecipientLines,
-  sanitizeFilenamePart,
-} from '@/lib/letter'
-import { cn } from '@/lib/utils'
+import { ResumePreview } from '@/components/resume-preview'
+import { EmailSignaturePreview } from '@/components/email-signature-preview'
+import { COVER_LETTER_TEMPLATES } from '@/data/coverLetters'
+import { RESUME_TEMPLATES } from '@/data/resumes'
+import { SIGNATURE_TEMPLATES } from '@/data/signatures'
+import { logoOptions, profileOptions, signatureOptions } from '@/data/assets'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { type CoverLetterData, type VariationId } from '@/types'
+import type {
+  CoverLetterId,
+  CoverLetterTemplate,
+  DocumentType,
+  EmailSignatureTemplate,
+  ResumeCertificationItem,
+  ResumeCertificationStat,
+  ResumeEducationItem,
+  ResumeExperienceGroup,
+  ResumeExperienceItem,
+  ResumeId,
+  ResumeLeadershipGroup,
+  ResumeLeadershipItem,
+  ResumeTemplate,
+  SignatureId,
+} from '@/types'
+import { cn } from '@/lib/utils'
 
-type FieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+const selectClassName =
+  'h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400'
 
-const createInitialData = (config: VariationConfig): CoverLetterData => ({
-  companyName: '[Company Name]',
-  position: '[Role Title]',
-  hiringManager: 'Hiring Manager',
-  date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-  yourName: config.defaults.yourName,
-  yourEmail: config.defaults.yourEmail,
-  yourPhone: config.defaults.yourPhone,
-  yourWebsite: config.defaults.yourWebsite,
-  yourAddress: config.defaults.yourAddress,
-  companyAddress: '123 Example Street\nCity, Province Postal Code',
-  openingParagraph:
-    'I am writing to express my interest in the [Role Title] position at [Company Name]. I am energized by the opportunity to bring my blend of finance and technology experience to your team.',
-  bodyParagraph1:
-    'In my current role, I [add a quantifiable achievement that demonstrates how you deliver measurable impact aligned with the position].',
-  bodyParagraph2:
-    'I am especially drawn to [Company Name] because [share a reason that connects your values, industry focus, or recent initiatives].',
-  bodyParagraph3:
-    'Beyond my technical background, I bring [highlight a leadership, collaboration, or client-facing strength that differentiates you].',
-  closingParagraph:
-    'Thank you for considering my application. I would welcome the chance to discuss how I can support the [Role Title] mandate at [Company Name].',
-})
+const makeId = (prefix: string) => `${prefix}-${Date.now()}-${Math.round(Math.random() * 10000)}`
 
-const buildPlainTextLetter = (data: CoverLetterData) => {
-  const headerLines: string[] = []
+const splitLines = (value: string) =>
+  value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
 
-  if (data.yourName.trim()) headerLines.push(data.yourName.trim())
-  if (data.yourAddress.trim()) headerLines.push(data.yourAddress.trim())
+const splitComma = (value: string) =>
+  value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
 
-  const contactParts = [data.yourEmail, data.yourPhone, data.yourWebsite]
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0)
+const joinLines = (lines: string[]) => lines.join('\n')
+const joinComma = (items: string[]) => items.join(', ')
 
-  if (contactParts.length > 0) {
-    headerLines.push(contactParts.join(' | '))
-  }
-
-  const recipientLines = getRecipientLines(data)
-  const paragraphs = getLetterParagraphs(data)
-  const greetingName = data.hiringManager.trim() || 'Hiring Manager'
-
-  const lines: string[] = []
-
-  if (headerLines.length > 0) {
-    lines.push(...headerLines, '')
-  }
-
-  if (data.date.trim()) {
-    lines.push(data.date.trim(), '')
-  }
-
-  if (recipientLines.length > 0) {
-    lines.push(...recipientLines, '')
-  }
-
-  lines.push(`Dear ${greetingName},`, '', ...paragraphs, '', 'Sincerely,', data.yourName.trim() || 'Tyler Bustard')
-
-  return lines.join('\n')
-}
+const findLogoLabel = (src: string) => logoOptions.find((option) => option.value === src)?.label ?? 'Logo'
 
 const escapeHtml = (value: string) =>
   value
@@ -87,393 +61,1449 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
-const buildPdfHtml = (data: CoverLetterData, config: VariationConfig) => {
-  const contactChips = getContactItems(data)
-    .map((item) => `<span>${escapeHtml(item.value)}</span>`)
+const buildSignatureHtml = (template: EmailSignatureTemplate) => {
+  const { data, accent } = template
+  const logoHtml = data.logos
+    .map(
+      (logo) =>
+        `<span style="display:inline-block;margin-right:6px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;">` +
+        `<img src="${logo.src}" alt="${escapeHtml(logo.alt)}" style="max-width:32px;max-height:18px;display:block;" />` +
+        `</span>`,
+    )
     .join('')
-
-  const recipientHtml = getRecipientLines(data)
-    .map((line) => `<div>${escapeHtml(line)}</div>`)
-    .join('')
-
-  const paragraphsHtml = getLetterParagraphs(data)
-    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br />')}</p>`)
-    .join('')
-
-  const greetingName = escapeHtml(data.hiringManager.trim() || 'Hiring Manager')
-  const opportunitySummary = escapeHtml(getOpportunitySummary(data))
-
-  const dateHtml = data.date.trim()
-    ? `<div class="date">${escapeHtml(data.date.trim())}</div>`
-    : ''
-
-  const contactBlock = contactChips ? `<div class="contact">${contactChips}</div>` : ''
-  const summaryHtml = config.summary
-    ? `<p class="summary">${escapeHtml(config.summary)}</p>`
-    : ''
-  const signatureHtml = config.signatureSrc
-    ? `<div class="signature-image"><img src="${config.signatureSrc}" alt="${escapeHtml(config.signatureAlt)}" /></div>`
-    : ''
-  const recipientBlock = recipientHtml ? `<div class="recipient">${recipientHtml}</div>` : ''
-  const metaBlock = dateHtml || recipientBlock ? `<div class="meta">${dateHtml}${recipientBlock}</div>` : ''
-  const logoHtml = config.logoSrc
-    ? `<div class="logo"><img src="${config.logoSrc}" alt="${escapeHtml(config.logoAlt)}" /></div>`
-    : ''
 
   return `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Cover Letter - ${escapeHtml(data.companyName || 'Opportunity')}</title>
-  <style>
-    @page { margin: 1in; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1d1d1f; line-height: 1.65; margin: 0; }
-    .letter { max-width: 7.5in; margin: 0 auto; }
-    .header { border-bottom: 3px solid ${config.accent}; padding-bottom: 18px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-    .identity { flex: 1; }
-    .organization { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: ${config.accent}; margin-bottom: 6px; }
-    .name { font-size: 24px; font-weight: 700; color: ${config.accentDark}; letter-spacing: -0.01em; }
-    .tagline { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: ${config.accent}; margin-top: 6px; }
-    .logo { width: 56px; height: 56px; border-radius: 16px; border: 1px solid ${config.accent}1f; background: ${config.accentLight}; display: flex; align-items: center; justify-content: center; }
-    .logo img { max-width: 40px; max-height: 40px; object-fit: contain; }
-    .contact { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #4b5563; }
-    .contact span { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; background: ${config.accentLight}; border: 1px solid ${config.accent}1a; }
-    .summary { font-size: 13px; color: #374151; line-height: 1.7; border-top: 1px solid #e5e7eb; margin-top: 18px; padding-top: 18px; }
-    .meta { font-size: 13px; color: #4b5563; margin-bottom: 22px; }
-    .recipient { margin-top: 10px; }
-    .opportunity { margin-bottom: 24px; padding: 16px 18px; border-radius: 16px; background: ${config.accentLight}; color: ${config.accentDark}; }
-    .opportunity-label { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; color: ${config.accentDark}; }
-    .opportunity-organization { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
-    .opportunity p { margin: 0; color: #374151; }
-    .greeting { font-size: 14px; font-weight: 600; color: ${config.accentDark}; margin-bottom: 16px; }
-    .body p { margin: 0 0 16px; text-align: justify; }
-    .closing { margin-top: 32px; font-size: 14px; }
-    .signature-image { margin: 12px 0; }
-    .signature-image img { height: 48px; width: auto; object-fit: contain; filter: grayscale(100%); }
-  </style>
-</head>
 <body>
-  <div class="letter">
-    <div class="header">
-      <div class="identity">
-        <div class="organization">${escapeHtml(config.organization)}</div>
-        <div class="name">${escapeHtml(data.yourName)}</div>
-        <div class="tagline">${escapeHtml(config.tagline)}</div>
+<table cellpadding="0" cellspacing="0" style="font-family:'Segoe UI',sans-serif;color:#0f172a;">
+  <tr>
+    <td style="padding:0 12px 0 0;vertical-align:top;">
+      <img src="${data.profileSrc}" alt="${escapeHtml(data.profileAlt)}" width="64" height="64" style="border-radius:14px;border:1px solid #e2e8f0;object-fit:cover;" />
+    </td>
+    <td style="vertical-align:top;">
+      <div style="font-size:18px;font-weight:700;">${escapeHtml(data.name)}</div>
+      <div style="font-size:13px;font-weight:600;color:${accent};">${escapeHtml(data.role)}</div>
+      ${data.organization ? `<div style="font-size:13px;color:#475569;">${escapeHtml(data.organization)}</div>` : ''}
+      <div style="margin-top:10px;font-size:12px;color:#1f2937;">
+        ${escapeHtml(data.phone)} | ${escapeHtml(data.email)} | ${escapeHtml(data.website)}
+        ${data.location ? ` | ${escapeHtml(data.location)}` : ''}
       </div>
-      ${logoHtml}
-    </div>
-    ${contactBlock}
-    ${summaryHtml}
-    ${metaBlock}
-    <div class="opportunity">
-      <div class="opportunity-label">Opportunity Focus</div>
-      <div class="opportunity-organization">${escapeHtml(config.organization)}</div>
-      <p>${opportunitySummary.replace(/\r?\n/g, '<br />')}</p>
-    </div>
-    <div class="greeting">Dear ${greetingName},</div>
-    <div class="body">${paragraphsHtml}</div>
-    <div class="closing">
-      <p>Sincerely,</p>
-      ${signatureHtml}
-      <p>${escapeHtml(data.yourName)}</p>
-    </div>
-  </div>
+      <div style="margin-top:12px;">${logoHtml}</div>
+    </td>
+  </tr>
+</table>
 </body>
 </html>`
 }
 
+const EditorSection = ({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+}) => (
+  <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur">
+    <div className="mb-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</p>
+      {description && <p className="text-xs text-slate-400 mt-1">{description}</p>}
+    </div>
+    <div className="space-y-3">{children}</div>
+  </section>
+)
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="space-y-1">
+    <Label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</Label>
+    {children}
+  </div>
+)
+
+const ColorField = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (next: string) => void
+}) => (
+  <div className="space-y-1">
+    <Label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</Label>
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-12 rounded-md border border-slate-200 bg-white"
+      />
+      <Input value={value} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  </div>
+)
+
+const LogoMultiSelect = ({
+  selected,
+  onChange,
+}: {
+  selected: { src: string; alt: string }[]
+  onChange: (next: { src: string; alt: string }[]) => void
+}) => (
+  <div className="grid gap-2 sm:grid-cols-2">
+    {logoOptions.map((option) => {
+      const checked = selected.some((logo) => logo.src === option.value)
+      return (
+        <label key={option.value} className="flex items-center gap-2 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => {
+              if (event.target.checked) {
+                onChange([...selected, { src: option.value, alt: option.label }])
+              } else {
+                onChange(selected.filter((logo) => logo.src !== option.value))
+              }
+            }}
+            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+          />
+          <span>{option.label}</span>
+        </label>
+      )
+    })}
+  </div>
+)
+
 export default function App() {
-  const [variationId, setVariationId] = useState<VariationId>(COVER_LETTER_VARIATIONS[0].id)
-  const [data, setData] = useState<CoverLetterData>(() => createInitialData(COVER_LETTER_VARIATIONS[0]))
-  const [previewMode, setPreviewMode] = useState(false)
+  const [documentType, setDocumentType] = useState<DocumentType>('resume')
+  const [resumeTemplates, setResumeTemplates] = useState<ResumeTemplate[]>(() => RESUME_TEMPLATES)
+  const [resumeId, setResumeId] = useState<ResumeId>(RESUME_TEMPLATES[0].id)
+  const [coverLetters, setCoverLetters] = useState<CoverLetterTemplate[]>(() => COVER_LETTER_TEMPLATES)
+  const [coverLetterId, setCoverLetterId] = useState<CoverLetterId>(COVER_LETTER_TEMPLATES[0].id)
+  const [signatureTemplates, setSignatureTemplates] = useState<EmailSignatureTemplate[]>(() => SIGNATURE_TEMPLATES)
+  const [signatureId, setSignatureId] = useState<SignatureId>(SIGNATURE_TEMPLATES[0].id)
+  const [statusMessage, setStatusMessage] = useState('')
 
-  const selectedVariation = VARIATION_MAP[variationId]
+  const selectedResume = resumeTemplates.find((template) => template.id === resumeId) ?? resumeTemplates[0]
+  const selectedCoverLetter = coverLetters.find((template) => template.id === coverLetterId) ?? coverLetters[0]
+  const selectedSignature =
+    signatureTemplates.find((template) => template.id === signatureId) ?? signatureTemplates[0]
 
-  useEffect(() => {
-    const defaults = VARIATION_MAP[variationId].defaults
+  const signatureHtml = useMemo(() => buildSignatureHtml(selectedSignature), [selectedSignature])
 
-    setData((prev) => ({
-      ...prev,
-      ...defaults,
+  const updateResumeTemplate = (id: string, updater: (template: ResumeTemplate) => ResumeTemplate) => {
+    setResumeTemplates((prev) => prev.map((template) => (template.id === id ? updater(template) : template)))
+  }
+
+  const updateResumeHeader = (patch: Partial<ResumeTemplate['data']['header']>) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        header: {
+          ...template.data.header,
+          ...patch,
+        },
+      },
     }))
-  }, [variationId])
-
-  const handleFieldChange = (field: keyof CoverLetterData) => (event: FieldChangeEvent) => {
-    const { value } = event.target
-    setData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const downloadCoverLetter = () => {
-    const content = buildPlainTextLetter(data)
-    const companySlug = sanitizeFilenamePart(data.companyName, 'Company')
-    const positionSlug = sanitizeFilenamePart(data.position, 'Role')
-    const fileName = `Cover_Letter_${companySlug}_${positionSlug}_${variationId}.txt`
-
-    const blob = new Blob([content], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = fileName
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
-    URL.revokeObjectURL(url)
+  const updateResumeContact = (patch: Partial<ResumeTemplate['data']['header']['contact']>) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        header: {
+          ...template.data.header,
+          contact: {
+            ...template.data.header.contact,
+            ...patch,
+          },
+        },
+      },
+    }))
   }
 
-  const downloadPDF = () => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
+  const updateResumeTheme = (patch: Partial<ResumeTemplate['theme']>) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      theme: {
+        ...template.theme,
+        ...patch,
+      },
+    }))
+  }
 
-    const htmlContent = buildPdfHtml(data, selectedVariation)
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
-    printWindow.focus()
+  const updateEducationItem = (index: number, patch: Partial<ResumeEducationItem>) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const education = template.data.education.map((item, idx) =>
+        idx === index ? { ...item, ...patch } : item,
+      )
+      return { ...template, data: { ...template.data, education } }
+    })
+  }
 
+  const addEducationItem = () => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        education: [
+          ...template.data.education,
+          {
+            id: makeId('education'),
+            degree: 'New Degree',
+            program: 'Program',
+            school: 'Institution',
+            date: 'Year',
+            bullets: [],
+            logoSrc: logoOptions[0].value,
+            logoAlt: logoOptions[0].label,
+          },
+        ],
+      },
+    }))
+  }
+
+  const removeEducationItem = (index: number) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        education: template.data.education.filter((_, idx) => idx !== index),
+      },
+    }))
+  }
+
+  const updateExperiencePrimaryItem = (index: number, patch: Partial<ResumeExperienceItem>) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const primary = template.data.experience.primary.map((item, idx) =>
+        idx === index ? { ...item, ...patch } : item,
+      )
+      return { ...template, data: { ...template.data, experience: { ...template.data.experience, primary } } }
+    })
+  }
+
+  const addExperiencePrimaryItem = () => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        experience: {
+          ...template.data.experience,
+          primary: [
+            ...template.data.experience.primary,
+            {
+              id: makeId('experience-primary'),
+              role: 'New Role',
+              company: 'Organization',
+              location: 'Location',
+              date: 'Year',
+              bullets: [],
+              skills: [],
+              logoSrc: logoOptions[0].value,
+              logoAlt: logoOptions[0].label,
+            },
+          ],
+        },
+      },
+    }))
+  }
+
+  const removeExperiencePrimaryItem = (index: number) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        experience: {
+          ...template.data.experience,
+          primary: template.data.experience.primary.filter((_, idx) => idx !== index),
+        },
+      },
+    }))
+  }
+
+  const updateExperienceGroup = (groupIndex: number, patch: Partial<ResumeExperienceGroup>) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const groups = template.data.experience.groups.map((group, idx) =>
+        idx === groupIndex ? { ...group, ...patch } : group,
+      )
+      return { ...template, data: { ...template.data, experience: { ...template.data.experience, groups } } }
+    })
+  }
+
+  const updateExperienceGroupItem = (
+    groupIndex: number,
+    itemIndex: number,
+    patch: Partial<ResumeExperienceItem>,
+  ) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const groups = template.data.experience.groups.map((group, idx) => {
+        if (idx !== groupIndex) return group
+        const items = group.items.map((item, itemIdx) =>
+          itemIdx === itemIndex ? { ...item, ...patch } : item,
+        )
+        return { ...group, items }
+      })
+      return { ...template, data: { ...template.data, experience: { ...template.data.experience, groups } } }
+    })
+  }
+
+  const addExperienceGroupItem = (groupIndex: number) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const groups = template.data.experience.groups.map((group, idx) => {
+        if (idx !== groupIndex) return group
+        return {
+          ...group,
+          items: [
+            ...group.items,
+            {
+              id: makeId('experience-group'),
+              role: 'New Role',
+              company: 'Organization',
+              location: 'Location',
+              date: 'Year',
+              bullets: [],
+              skills: [],
+              logoSrc: logoOptions[0].value,
+              logoAlt: logoOptions[0].label,
+            },
+          ],
+        }
+      })
+      return { ...template, data: { ...template.data, experience: { ...template.data.experience, groups } } }
+    })
+  }
+
+  const removeExperienceGroupItem = (groupIndex: number, itemIndex: number) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const groups = template.data.experience.groups.map((group, idx) => {
+        if (idx !== groupIndex) return group
+        return { ...group, items: group.items.filter((_, i) => i !== itemIndex) }
+      })
+      return { ...template, data: { ...template.data, experience: { ...template.data.experience, groups } } }
+    })
+  }
+
+  const updateCertificationItem = (index: number, patch: Partial<ResumeCertificationItem>) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const featured = template.data.certifications.featured.map((item, idx) =>
+        idx === index ? { ...item, ...patch } : item,
+      )
+      return {
+        ...template,
+        data: {
+          ...template.data,
+          certifications: { ...template.data.certifications, featured },
+        },
+      }
+    })
+  }
+
+  const addCertificationItem = () => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        certifications: {
+          ...template.data.certifications,
+          featured: [
+            ...template.data.certifications.featured,
+            {
+              id: makeId('cert'),
+              title: 'New Certification',
+              organization: 'Organization',
+              detail: 'Details',
+              date: 'Year',
+              logoSrc: logoOptions[0].value,
+              logoAlt: logoOptions[0].label,
+            },
+          ],
+        },
+      },
+    }))
+  }
+
+  const removeCertificationItem = (index: number) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        certifications: {
+          ...template.data.certifications,
+          featured: template.data.certifications.featured.filter((_, idx) => idx !== index),
+        },
+      },
+    }))
+  }
+
+  const updateCertificationStat = (index: number, patch: Partial<ResumeCertificationStat>) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const stats = template.data.certifications.stats.map((item, idx) =>
+        idx === index ? { ...item, ...patch } : item,
+      )
+      return {
+        ...template,
+        data: {
+          ...template.data,
+          certifications: { ...template.data.certifications, stats },
+        },
+      }
+    })
+  }
+
+  const addCertificationStat = () => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        certifications: {
+          ...template.data.certifications,
+          stats: [
+            ...template.data.certifications.stats,
+            {
+              id: makeId('cert-stat'),
+              label: 'Certification Group',
+              count: '0',
+              logos: [],
+            },
+          ],
+        },
+      },
+    }))
+  }
+
+  const removeCertificationStat = (index: number) => {
+    updateResumeTemplate(resumeId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        certifications: {
+          ...template.data.certifications,
+          stats: template.data.certifications.stats.filter((_, idx) => idx !== index),
+        },
+      },
+    }))
+  }
+
+  const updateLeadershipGroup = (groupIndex: number, patch: Partial<ResumeLeadershipGroup>) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const leadership = template.data.leadership.map((group, idx) =>
+        idx === groupIndex ? { ...group, ...patch } : group,
+      )
+      return { ...template, data: { ...template.data, leadership } }
+    })
+  }
+
+  const updateLeadershipGroupItem = (
+    groupIndex: number,
+    itemIndex: number,
+    patch: Partial<ResumeLeadershipItem>,
+  ) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const leadership = template.data.leadership.map((group, idx) => {
+        if (idx !== groupIndex) return group
+        const items = group.items.map((item, itemIdx) =>
+          itemIdx === itemIndex ? { ...item, ...patch } : item,
+        )
+        return { ...group, items }
+      })
+      return { ...template, data: { ...template.data, leadership } }
+    })
+  }
+
+  const addLeadershipGroupItem = (groupIndex: number) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const leadership = template.data.leadership.map((group, idx) => {
+        if (idx !== groupIndex) return group
+        return {
+          ...group,
+          items: [
+            ...group.items,
+            {
+              id: makeId('leadership'),
+              role: 'New Role',
+              organization: 'Organization',
+              location: 'Location',
+              date: 'Year',
+              logoSrc: logoOptions[0].value,
+              logoAlt: logoOptions[0].label,
+            },
+          ],
+        }
+      })
+      return { ...template, data: { ...template.data, leadership } }
+    })
+  }
+
+  const removeLeadershipGroupItem = (groupIndex: number, itemIndex: number) => {
+    updateResumeTemplate(resumeId, (template) => {
+      const leadership = template.data.leadership.map((group, idx) => {
+        if (idx !== groupIndex) return group
+        return { ...group, items: group.items.filter((_, i) => i !== itemIndex) }
+      })
+      return { ...template, data: { ...template.data, leadership } }
+    })
+  }
+
+  const updateCoverLetterTemplate = (
+    id: string,
+    updater: (template: CoverLetterTemplate) => CoverLetterTemplate,
+  ) => {
+    setCoverLetters((prev) => prev.map((template) => (template.id === id ? updater(template) : template)))
+  }
+
+  const updateCoverLetterConfig = (patch: Partial<CoverLetterTemplate['config']>) => {
+    updateCoverLetterTemplate(coverLetterId, (template) => ({
+      ...template,
+      config: {
+        ...template.config,
+        ...patch,
+      },
+    }))
+  }
+
+  const updateCoverLetterData = (patch: Partial<CoverLetterTemplate['data']>) => {
+    updateCoverLetterTemplate(coverLetterId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        ...patch,
+      },
+    }))
+  }
+
+  const updateSignatureTemplate = (
+    id: string,
+    updater: (template: EmailSignatureTemplate) => EmailSignatureTemplate,
+  ) => {
+    setSignatureTemplates((prev) => prev.map((template) => (template.id === id ? updater(template) : template)))
+  }
+
+  const updateSignatureData = (patch: Partial<EmailSignatureTemplate['data']>) => {
+    updateSignatureTemplate(signatureId, (template) => ({
+      ...template,
+      data: {
+        ...template.data,
+        ...patch,
+      },
+    }))
+  }
+
+  const updateSignatureAccent = (accent: string) => {
+    updateSignatureTemplate(signatureId, (template) => ({ ...template, accent }))
+  }
+
+  const handleExportPdf = () => {
+    const previousTitle = document.title
+    const label =
+      documentType === 'resume'
+        ? selectedResume.label
+        : documentType === 'cover-letter'
+          ? selectedCoverLetter.label
+          : selectedSignature.label
+    document.title = `${label} - ${documentType}`
+    window.print()
     setTimeout(() => {
-      printWindow.print()
-    }, 250)
+      document.title = previousTitle
+    }, 500)
+  }
+
+  const handleCopySignatureHtml = async () => {
+    try {
+      await navigator.clipboard.writeText(signatureHtml)
+      setStatusMessage('Signature HTML copied to clipboard.')
+      setTimeout(() => setStatusMessage(''), 2000)
+    } catch (error) {
+      setStatusMessage('Unable to copy signature HTML. Please copy manually.')
+      setTimeout(() => setStatusMessage(''), 3000)
+    }
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f5f5f7' }}>
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <header className="mb-10 space-y-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="min-h-screen">
+      <header className="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white text-sm font-bold">
+              TB
+            </div>
             <div>
-              <div className="inline-flex items-center gap-3">
-                <FileText className="h-8 w-8 text-primary" />
-                <h1 className="text-4xl font-bold text-gray-900">Cover Letter Generator</h1>
-              </div>
-              <p className="mt-3 max-w-2xl text-gray-600">
-                Create polished cover letters that match the resume aesthetics across every site variation.
-              </p>
+              <h1 className="text-lg font-semibold text-slate-900">Career Document Studio</h1>
+              <p className="text-xs text-slate-500">Unified editor for resumes, cover letters, and signatures</p>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {(
+              [
+                { id: 'resume', label: 'Resume' },
+                { id: 'cover-letter', label: 'Cover Letter' },
+                { id: 'email-signature', label: 'Email Signature' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setDocumentType(tab.id)}
+                className={cn(
+                  'rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition',
+                  documentType === tab.id
+                    ? 'bg-slate-900 text-white'
+                    : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={handleExportPdf} variant="default">
+              <Download /> Export PDF
+            </Button>
+            {documentType === 'email-signature' && (
+              <Button onClick={handleCopySignatureHtml} variant="outline">
+                <Mail /> Copy HTML
+              </Button>
+            )}
+          </div>
+        </div>
+      </header>
 
-            <div className="flex flex-wrap gap-3">
-              {COVER_LETTER_VARIATIONS.map((variation) => {
-                const isActive = variation.id === variationId
-
-                return (
-                  <button
-                    key={variation.id}
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => setVariationId(variation.id)}
-                    className={cn(
-                      'w-full min-w-[180px] rounded-2xl border px-4 py-3 text-left shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:w-auto',
-                      isActive ? 'shadow-md' : 'hover:border-gray-300 hover:shadow-md',
-                    )}
-                    style={{
-                      borderColor: isActive ? variation.accent : 'rgba(0,0,0,0.08)',
-                      backgroundColor: isActive ? variation.accentLight : '#ffffff',
-                    }}
+      <main className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[360px_1fr]">
+        <aside className="no-print space-y-4 max-h-[calc(100vh-160px)] overflow-y-auto pr-2">
+          {documentType === 'resume' && (
+            <>
+              <EditorSection title="Template" description="Select a resume version and tune the theme.">
+                <Field label="Resume Template">
+                  <select
+                    value={resumeId}
+                    onChange={(event) => setResumeId(event.target.value as ResumeId)}
+                    className={selectClassName}
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border"
-                        style={{
-                          borderColor: isActive ? `${variation.accent}33` : 'rgba(0,0,0,0.08)',
-                          backgroundColor: isActive ? '#ffffff' : variation.accentLight,
-                        }}
-                      >
-                        <img src={variation.logoSrc} alt={variation.logoAlt} className="h-6 w-6 object-contain" />
-                      </div>
-                      <div>
-                        <span className="block text-sm font-semibold text-gray-900">{variation.label}</span>
-                        <span className="mt-1 block text-xs text-gray-600">{variation.description}</span>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+                    {resumeTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <ColorField
+                  label="Accent Color"
+                  value={selectedResume.theme.accent}
+                  onChange={(value) => updateResumeTheme({ accent: value })}
+                />
+                <ColorField
+                  label="Accent Soft"
+                  value={selectedResume.theme.accentSoft}
+                  onChange={(value) => updateResumeTheme({ accentSoft: value })}
+                />
+                <ColorField
+                  label="Accent Dark"
+                  value={selectedResume.theme.accentDark}
+                  onChange={(value) => updateResumeTheme({ accentDark: value })}
+                />
+              </EditorSection>
 
-          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-            <p className="text-sm text-gray-600">
-              Currently viewing the <span className="font-semibold text-gray-900">{selectedVariation.label}</span> variation styled for{' '}
-              <span className="text-gray-900">{selectedVariation.tagline}</span> resumes at {selectedVariation.organization}.
-            </p>
-          </div>
-        </header>
-
-        <div className="mb-6 flex justify-center lg:hidden">
-          <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => setPreviewMode(false)}
-              className={cn(
-                'px-4 py-2 text-sm font-medium transition-colors',
-                !previewMode
-                  ? 'rounded-md bg-primary text-primary-foreground'
-                  : 'rounded-md text-gray-600 hover:text-gray-900',
-              )}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewMode(true)}
-              className={cn(
-                'px-4 py-2 text-sm font-medium transition-colors',
-                previewMode
-                  ? 'rounded-md bg-primary text-primary-foreground'
-                  : 'rounded-md text-gray-600 hover:text-gray-900',
-              )}
-            >
-              Preview
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,380px),1fr]">
-          <div className={cn('space-y-6', previewMode && 'hidden', 'lg:block')}>
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900">Personal Details</h2>
-              <p className="mt-1 text-sm text-gray-500">This information appears in the header of your cover letter.</p>
-              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="yourName">Your Name</Label>
-                  <Input id="yourName" value={data.yourName} onChange={handleFieldChange('yourName')} className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="yourEmail">Your Email</Label>
-                  <Input id="yourEmail" value={data.yourEmail} onChange={handleFieldChange('yourEmail')} className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="yourPhone">Your Phone</Label>
-                  <Input id="yourPhone" value={data.yourPhone} onChange={handleFieldChange('yourPhone')} className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="yourWebsite">Your Website</Label>
+              <EditorSection title="Header" description="Update the resume header, profile image, and summary.">
+                <Field label="Name">
                   <Input
-                    id="yourWebsite"
-                    value={data.yourWebsite}
-                    onChange={handleFieldChange('yourWebsite')}
-                    className="mt-1"
-                    placeholder="tylerbustard.net"
+                    value={selectedResume.data.header.name}
+                    onChange={(event) => updateResumeHeader({ name: event.target.value })}
                   />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="yourAddress">Your Location</Label>
-                  <Input id="yourAddress" value={data.yourAddress} onChange={handleFieldChange('yourAddress')} className="mt-1" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input id="date" value={data.date} onChange={handleFieldChange('date')} className="mt-1" />
-                </div>
-              </div>
-            </div>
+                </Field>
+                <Field label="Title">
+                  <Input
+                    value={selectedResume.data.header.title}
+                    onChange={(event) => updateResumeHeader({ title: event.target.value })}
+                  />
+                </Field>
+                <Field label="Profile Image">
+                  <select
+                    value={selectedResume.data.header.profileSrc}
+                    onChange={(event) =>
+                      updateResumeHeader({
+                        profileSrc: event.target.value,
+                        profileAlt: profileOptions.find((option) => option.value === event.target.value)?.label ??
+                          selectedResume.data.header.profileAlt,
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    {profileOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Summary">
+                  <Textarea
+                    value={selectedResume.data.header.summary}
+                    onChange={(event) => updateResumeHeader({ summary: event.target.value })}
+                  />
+                </Field>
+              </EditorSection>
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900">Opportunity Details</h2>
-              <p className="mt-1 text-sm text-gray-500">Add company context so the preview highlights the right role.</p>
-              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="companyName">Company Name</Label>
-                  <Input id="companyName" value={data.companyName} onChange={handleFieldChange('companyName')} className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="position">Position Title</Label>
-                  <Input id="position" value={data.position} onChange={handleFieldChange('position')} className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="hiringManager">Hiring Manager</Label>
-                  <Input id="hiringManager" value={data.hiringManager} onChange={handleFieldChange('hiringManager')} className="mt-1" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="companyAddress">Company Address (optional)</Label>
-                  <Textarea
-                    id="companyAddress"
-                    value={data.companyAddress}
-                    onChange={handleFieldChange('companyAddress')}
-                    className="mt-1"
-                    rows={3}
-                    placeholder={`123 Bay Street\nToronto, ON M5J 2N8`}
+              <EditorSection title="Contact" description="Control the contact chips shown on the resume.">
+                <Field label="Email">
+                  <Input
+                    value={selectedResume.data.header.contact.email}
+                    onChange={(event) => updateResumeContact({ email: event.target.value })}
                   />
-                </div>
-              </div>
-            </div>
+                </Field>
+                <Field label="Phone">
+                  <Input
+                    value={selectedResume.data.header.contact.phone}
+                    onChange={(event) => updateResumeContact({ phone: event.target.value })}
+                  />
+                </Field>
+                <Field label="Website">
+                  <Input
+                    value={selectedResume.data.header.contact.website}
+                    onChange={(event) => updateResumeContact({ website: event.target.value })}
+                  />
+                </Field>
+                <Field label="Location">
+                  <Input
+                    value={selectedResume.data.header.contact.location}
+                    onChange={(event) => updateResumeContact({ location: event.target.value })}
+                  />
+                </Field>
+              </EditorSection>
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900">Letter Narrative</h2>
-              <p className="mt-1 text-sm text-gray-500">Shape the story you want to tell. Leave any section blank to use the smart defaults.</p>
-              <div className="mt-5 space-y-4">
-                <div>
-                  <Label htmlFor="openingParagraph">Opening paragraph</Label>
-                  <Textarea
-                    id="openingParagraph"
-                    value={data.openingParagraph}
-                    onChange={handleFieldChange('openingParagraph')}
-                    className="mt-1"
-                    rows={3}
-                    placeholder="I am writing to express my interest in..."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bodyParagraph1">Body paragraph 1</Label>
-                  <Textarea
-                    id="bodyParagraph1"
-                    value={data.bodyParagraph1}
-                    onChange={handleFieldChange('bodyParagraph1')}
-                    className="mt-1"
-                    rows={4}
-                    placeholder="Highlight a result, initiative, or skill that aligns with the role."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bodyParagraph2">Body paragraph 2</Label>
-                  <Textarea
-                    id="bodyParagraph2"
-                    value={data.bodyParagraph2}
-                    onChange={handleFieldChange('bodyParagraph2')}
-                    className="mt-1"
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bodyParagraph3">Body paragraph 3</Label>
-                  <Textarea
-                    id="bodyParagraph3"
-                    value={data.bodyParagraph3}
-                    onChange={handleFieldChange('bodyParagraph3')}
-                    className="mt-1"
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="closingParagraph">Closing paragraph</Label>
-                  <Textarea
-                    id="closingParagraph"
-                    value={data.closingParagraph}
-                    onChange={handleFieldChange('closingParagraph')}
-                    className="mt-1"
-                    rows={3}
-                    placeholder="I am eager to bring my skills..."
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+              <EditorSection title="Education" description="Manage degrees, institutions, and bullet highlights.">
+                {selectedResume.data.education.map((item, index) => (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-700">{item.degree}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeEducationItem(index)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                    <Field label="Degree">
+                      <Input value={item.degree} onChange={(event) => updateEducationItem(index, { degree: event.target.value })} />
+                    </Field>
+                    <Field label="Program">
+                      <Input value={item.program} onChange={(event) => updateEducationItem(index, { program: event.target.value })} />
+                    </Field>
+                    <Field label="School">
+                      <Input value={item.school} onChange={(event) => updateEducationItem(index, { school: event.target.value })} />
+                    </Field>
+                    <Field label="Dates">
+                      <Input value={item.date} onChange={(event) => updateEducationItem(index, { date: event.target.value })} />
+                    </Field>
+                    <Field label="Logo">
+                      <select
+                        value={item.logoSrc}
+                        onChange={(event) =>
+                          updateEducationItem(index, {
+                            logoSrc: event.target.value,
+                            logoAlt: findLogoLabel(event.target.value),
+                          })
+                        }
+                        className={selectClassName}
+                      >
+                        {logoOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Highlights">
+                      <Textarea
+                        value={joinLines(item.bullets)}
+                        onChange={(event) => updateEducationItem(index, { bullets: splitLines(event.target.value) })}
+                      />
+                    </Field>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={addEducationItem}>
+                  Add Education
+                </Button>
+              </EditorSection>
 
-          <div className={cn('space-y-6', !previewMode && 'hidden', 'lg:block')}>
-            <div className="rounded-3xl bg-transparent">
-              <CoverLetterPreview data={data} config={selectedVariation} />
-            </div>
+              <EditorSection title="Primary Experience" description="Edit the main experience timeline.">
+                {selectedResume.data.experience.primary.map((item, index) => (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-700">{item.role}</p>
+                      <Button variant="ghost" size="sm" onClick={() => removeExperiencePrimaryItem(index)}>
+                        Remove
+                      </Button>
+                    </div>
+                    <Field label="Role">
+                      <Input value={item.role} onChange={(event) => updateExperiencePrimaryItem(index, { role: event.target.value })} />
+                    </Field>
+                    <Field label="Company">
+                      <Input value={item.company} onChange={(event) => updateExperiencePrimaryItem(index, { company: event.target.value })} />
+                    </Field>
+                    <Field label="Location">
+                      <Input value={item.location} onChange={(event) => updateExperiencePrimaryItem(index, { location: event.target.value })} />
+                    </Field>
+                    <Field label="Dates">
+                      <Input value={item.date} onChange={(event) => updateExperiencePrimaryItem(index, { date: event.target.value })} />
+                    </Field>
+                    <Field label="Logo">
+                      <select
+                        value={item.logoSrc}
+                        onChange={(event) =>
+                          updateExperiencePrimaryItem(index, {
+                            logoSrc: event.target.value,
+                            logoAlt: findLogoLabel(event.target.value),
+                          })
+                        }
+                        className={selectClassName}
+                      >
+                        {logoOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Bullets">
+                      <Textarea
+                        value={joinLines(item.bullets)}
+                        onChange={(event) => updateExperiencePrimaryItem(index, { bullets: splitLines(event.target.value) })}
+                      />
+                    </Field>
+                    <Field label="Skills">
+                      <Input
+                        value={joinComma(item.skills)}
+                        onChange={(event) => updateExperiencePrimaryItem(index, { skills: splitComma(event.target.value) })}
+                      />
+                    </Field>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={addExperiencePrimaryItem}>
+                  Add Primary Role
+                </Button>
+              </EditorSection>
 
-            <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-              <Button onClick={downloadCoverLetter} size="lg" className="gap-2">
-                <Download className="h-5 w-5" />
-                Download as TXT
-              </Button>
-              <Button onClick={downloadPDF} size="lg" variant="outline" className="gap-2">
-                <FileText className="h-5 w-5" />
-                Download as PDF
-              </Button>
+              <EditorSection title="Experience Groups" description="Control early career and co-op blocks.">
+                {selectedResume.data.experience.groups.map((group, groupIndex) => (
+                  <div key={group.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    <Field label="Group Title">
+                      <Input
+                        value={group.title ?? ''}
+                        onChange={(event) => updateExperienceGroup(groupIndex, { title: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Layout">
+                      <select
+                        value={group.layout}
+                        onChange={(event) =>
+                          updateExperienceGroup(groupIndex, {
+                            layout: event.target.value as ResumeExperienceGroup['layout'],
+                          })
+                        }
+                        className={selectClassName}
+                      >
+                        <option value="stack">Stack</option>
+                        <option value="grid">Grid</option>
+                      </select>
+                    </Field>
+                    {group.layout === 'grid' && (
+                      <Field label="Columns">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={3}
+                          value={group.columns ?? 2}
+                          onChange={(event) => updateExperienceGroup(groupIndex, { columns: Number(event.target.value) })}
+                        />
+                      </Field>
+                    )}
+                    {group.items.map((item, itemIndex) => (
+                      <div key={item.id} className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-slate-700">{item.role}</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeExperienceGroupItem(groupIndex, itemIndex)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <Field label="Role">
+                          <Input
+                            value={item.role}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, { role: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Company">
+                          <Input
+                            value={item.company}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, { company: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Location">
+                          <Input
+                            value={item.location}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, { location: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Dates">
+                          <Input
+                            value={item.date}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, { date: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Logo">
+                          <select
+                            value={item.logoSrc}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, {
+                                logoSrc: event.target.value,
+                                logoAlt: findLogoLabel(event.target.value),
+                              })
+                            }
+                            className={selectClassName}
+                          >
+                            {logoOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        <Field label="Bullets">
+                          <Textarea
+                            value={joinLines(item.bullets)}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, { bullets: splitLines(event.target.value) })
+                            }
+                          />
+                        </Field>
+                        <Field label="Skills">
+                          <Input
+                            value={joinComma(item.skills)}
+                            onChange={(event) =>
+                              updateExperienceGroupItem(groupIndex, itemIndex, { skills: splitComma(event.target.value) })
+                            }
+                          />
+                        </Field>
+                      </div>
+                    ))}
+                    <Button variant="outline" onClick={() => addExperienceGroupItem(groupIndex)}>
+                      Add Item
+                    </Button>
+                  </div>
+                ))}
+              </EditorSection>
+
+              <EditorSection title="Certifications" description="Edit certifications and counts.">
+                {selectedResume.data.certifications.featured.map((item, index) => (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-700">{item.title}</p>
+                      <Button variant="ghost" size="sm" onClick={() => removeCertificationItem(index)}>
+                        Remove
+                      </Button>
+                    </div>
+                    <Field label="Title">
+                      <Input value={item.title} onChange={(event) => updateCertificationItem(index, { title: event.target.value })} />
+                    </Field>
+                    <Field label="Organization">
+                      <Input
+                        value={item.organization}
+                        onChange={(event) => updateCertificationItem(index, { organization: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Detail">
+                      <Input value={item.detail} onChange={(event) => updateCertificationItem(index, { detail: event.target.value })} />
+                    </Field>
+                    <Field label="Year">
+                      <Input value={item.date} onChange={(event) => updateCertificationItem(index, { date: event.target.value })} />
+                    </Field>
+                    <Field label="Logo">
+                      <select
+                        value={item.logoSrc}
+                        onChange={(event) =>
+                          updateCertificationItem(index, {
+                            logoSrc: event.target.value,
+                            logoAlt: findLogoLabel(event.target.value),
+                          })
+                        }
+                        className={selectClassName}
+                      >
+                        {logoOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={addCertificationItem}>
+                  Add Certification
+                </Button>
+
+                <div className="h-px bg-slate-200" />
+
+                {selectedResume.data.certifications.stats.map((item, index) => (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-700">{item.label}</p>
+                      <Button variant="ghost" size="sm" onClick={() => removeCertificationStat(index)}>
+                        Remove
+                      </Button>
+                    </div>
+                    <Field label="Label">
+                      <Input value={item.label} onChange={(event) => updateCertificationStat(index, { label: event.target.value })} />
+                    </Field>
+                    <Field label="Count">
+                      <Input value={item.count} onChange={(event) => updateCertificationStat(index, { count: event.target.value })} />
+                    </Field>
+                    <Field label="Logos">
+                      <LogoMultiSelect
+                        selected={item.logos}
+                        onChange={(next) => updateCertificationStat(index, { logos: next })}
+                      />
+                    </Field>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={addCertificationStat}>
+                  Add Certification Group
+                </Button>
+              </EditorSection>
+
+              <EditorSection title="Community Leadership" description="Control leadership entries and grouping.">
+                {selectedResume.data.leadership.map((group, groupIndex) => (
+                  <div key={group.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    <Field label="Group Title">
+                      <Input
+                        value={group.title ?? ''}
+                        onChange={(event) => updateLeadershipGroup(groupIndex, { title: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Layout">
+                      <select
+                        value={group.layout}
+                        onChange={(event) =>
+                          updateLeadershipGroup(groupIndex, { layout: event.target.value as ResumeLeadershipGroup['layout'] })
+                        }
+                        className={selectClassName}
+                      >
+                        <option value="stack">Stack</option>
+                        <option value="grid">Grid</option>
+                      </select>
+                    </Field>
+                    {group.layout === 'grid' && (
+                      <Field label="Columns">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={3}
+                          value={group.columns ?? 2}
+                          onChange={(event) => updateLeadershipGroup(groupIndex, { columns: Number(event.target.value) })}
+                        />
+                      </Field>
+                    )}
+                    {group.items.map((item, itemIndex) => (
+                      <div key={item.id} className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-slate-700">{item.role}</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeLeadershipGroupItem(groupIndex, itemIndex)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <Field label="Role">
+                          <Input
+                            value={item.role}
+                            onChange={(event) =>
+                              updateLeadershipGroupItem(groupIndex, itemIndex, { role: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Organization">
+                          <Input
+                            value={item.organization}
+                            onChange={(event) =>
+                              updateLeadershipGroupItem(groupIndex, itemIndex, { organization: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Location">
+                          <Input
+                            value={item.location}
+                            onChange={(event) =>
+                              updateLeadershipGroupItem(groupIndex, itemIndex, { location: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Dates">
+                          <Input
+                            value={item.date}
+                            onChange={(event) =>
+                              updateLeadershipGroupItem(groupIndex, itemIndex, { date: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Logo">
+                          <select
+                            value={item.logoSrc}
+                            onChange={(event) =>
+                              updateLeadershipGroupItem(groupIndex, itemIndex, {
+                                logoSrc: event.target.value,
+                                logoAlt: findLogoLabel(event.target.value),
+                              })
+                            }
+                            className={selectClassName}
+                          >
+                            {logoOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                      </div>
+                    ))}
+                    <Button variant="outline" onClick={() => addLeadershipGroupItem(groupIndex)}>
+                      Add Leadership Item
+                    </Button>
+                  </div>
+                ))}
+              </EditorSection>
+            </>
+          )}
+
+          {documentType === 'cover-letter' && (
+            <>
+              <EditorSection title="Template" description="Select a cover letter template and theme.">
+                <Field label="Cover Letter Template">
+                  <select
+                    value={coverLetterId}
+                    onChange={(event) => setCoverLetterId(event.target.value as CoverLetterId)}
+                    className={selectClassName}
+                  >
+                    {coverLetters.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <ColorField
+                  label="Accent Color"
+                  value={selectedCoverLetter.config.accent}
+                  onChange={(value) => updateCoverLetterConfig({ accent: value })}
+                />
+                <ColorField
+                  label="Accent Light"
+                  value={selectedCoverLetter.config.accentLight}
+                  onChange={(value) => updateCoverLetterConfig({ accentLight: value })}
+                />
+                <ColorField
+                  label="Accent Dark"
+                  value={selectedCoverLetter.config.accentDark}
+                  onChange={(value) => updateCoverLetterConfig({ accentDark: value })}
+                />
+                <Field label="Tagline">
+                  <Input
+                    value={selectedCoverLetter.config.tagline}
+                    onChange={(event) => updateCoverLetterConfig({ tagline: event.target.value })}
+                  />
+                </Field>
+                <Field label="Organization">
+                  <Input
+                    value={selectedCoverLetter.config.organization}
+                    onChange={(event) => updateCoverLetterConfig({ organization: event.target.value })}
+                  />
+                </Field>
+                <Field label="Summary">
+                  <Textarea
+                    value={selectedCoverLetter.config.summary}
+                    onChange={(event) => updateCoverLetterConfig({ summary: event.target.value })}
+                  />
+                </Field>
+                <Field label="Profile Image">
+                  <select
+                    value={selectedCoverLetter.config.profileSrc}
+                    onChange={(event) =>
+                      updateCoverLetterConfig({
+                        profileSrc: event.target.value,
+                        profileAlt: profileOptions.find((option) => option.value === event.target.value)?.label ??
+                          selectedCoverLetter.config.profileAlt,
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    {profileOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Logo">
+                  <select
+                    value={selectedCoverLetter.config.logoSrc}
+                    onChange={(event) =>
+                      updateCoverLetterConfig({
+                        logoSrc: event.target.value,
+                        logoAlt: findLogoLabel(event.target.value),
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    {logoOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Signature">
+                  <select
+                    value={selectedCoverLetter.config.signatureSrc}
+                    onChange={(event) =>
+                      updateCoverLetterConfig({
+                        signatureSrc: event.target.value,
+                        signatureAlt:
+                          signatureOptions.find((option) => option.value === event.target.value)?.label ??
+                          selectedCoverLetter.config.signatureAlt,
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    {signatureOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </EditorSection>
+
+              <EditorSection title="Sender" description="Update your contact details.">
+                <Field label="Your Name">
+                  <Input
+                    value={selectedCoverLetter.data.yourName}
+                    onChange={(event) => updateCoverLetterData({ yourName: event.target.value })}
+                  />
+                </Field>
+                <Field label="Email">
+                  <Input
+                    value={selectedCoverLetter.data.yourEmail}
+                    onChange={(event) => updateCoverLetterData({ yourEmail: event.target.value })}
+                  />
+                </Field>
+                <Field label="Phone">
+                  <Input
+                    value={selectedCoverLetter.data.yourPhone}
+                    onChange={(event) => updateCoverLetterData({ yourPhone: event.target.value })}
+                  />
+                </Field>
+                <Field label="Website">
+                  <Input
+                    value={selectedCoverLetter.data.yourWebsite}
+                    onChange={(event) => updateCoverLetterData({ yourWebsite: event.target.value })}
+                  />
+                </Field>
+                <Field label="Location">
+                  <Input
+                    value={selectedCoverLetter.data.yourAddress}
+                    onChange={(event) => updateCoverLetterData({ yourAddress: event.target.value })}
+                  />
+                </Field>
+              </EditorSection>
+
+              <EditorSection title="Recipient" description="Control the recipient and company details.">
+                <Field label="Company">
+                  <Input
+                    value={selectedCoverLetter.data.companyName}
+                    onChange={(event) => updateCoverLetterData({ companyName: event.target.value })}
+                  />
+                </Field>
+                <Field label="Role">
+                  <Input
+                    value={selectedCoverLetter.data.position}
+                    onChange={(event) => updateCoverLetterData({ position: event.target.value })}
+                  />
+                </Field>
+                <Field label="Hiring Manager">
+                  <Input
+                    value={selectedCoverLetter.data.hiringManager}
+                    onChange={(event) => updateCoverLetterData({ hiringManager: event.target.value })}
+                  />
+                </Field>
+                <Field label="Date">
+                  <Input
+                    value={selectedCoverLetter.data.date}
+                    onChange={(event) => updateCoverLetterData({ date: event.target.value })}
+                  />
+                </Field>
+                <Field label="Company Address">
+                  <Textarea
+                    value={selectedCoverLetter.data.companyAddress}
+                    onChange={(event) => updateCoverLetterData({ companyAddress: event.target.value })}
+                  />
+                </Field>
+              </EditorSection>
+
+              <EditorSection title="Body" description="Edit the cover letter paragraphs.">
+                <Field label="Opening">
+                  <Textarea
+                    value={selectedCoverLetter.data.openingParagraph}
+                    onChange={(event) => updateCoverLetterData({ openingParagraph: event.target.value })}
+                  />
+                </Field>
+                <Field label="Body Paragraph 1">
+                  <Textarea
+                    value={selectedCoverLetter.data.bodyParagraph1}
+                    onChange={(event) => updateCoverLetterData({ bodyParagraph1: event.target.value })}
+                  />
+                </Field>
+                <Field label="Body Paragraph 2">
+                  <Textarea
+                    value={selectedCoverLetter.data.bodyParagraph2}
+                    onChange={(event) => updateCoverLetterData({ bodyParagraph2: event.target.value })}
+                  />
+                </Field>
+                <Field label="Body Paragraph 3">
+                  <Textarea
+                    value={selectedCoverLetter.data.bodyParagraph3}
+                    onChange={(event) => updateCoverLetterData({ bodyParagraph3: event.target.value })}
+                  />
+                </Field>
+                <Field label="Closing">
+                  <Textarea
+                    value={selectedCoverLetter.data.closingParagraph}
+                    onChange={(event) => updateCoverLetterData({ closingParagraph: event.target.value })}
+                  />
+                </Field>
+              </EditorSection>
+            </>
+          )}
+
+          {documentType === 'email-signature' && (
+            <>
+              <EditorSection title="Template" description="Select and style the signature layout.">
+                <Field label="Signature Template">
+                  <select
+                    value={signatureId}
+                    onChange={(event) => setSignatureId(event.target.value as SignatureId)}
+                    className={selectClassName}
+                  >
+                    {signatureTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <ColorField
+                  label="Accent"
+                  value={selectedSignature.accent}
+                  onChange={(value) => updateSignatureAccent(value)}
+                />
+              </EditorSection>
+
+              <EditorSection title="Signature" description="Update contact details and branding.">
+                <Field label="Name">
+                  <Input value={selectedSignature.data.name} onChange={(event) => updateSignatureData({ name: event.target.value })} />
+                </Field>
+                <Field label="Role">
+                  <Input value={selectedSignature.data.role} onChange={(event) => updateSignatureData({ role: event.target.value })} />
+                </Field>
+                <Field label="Organization">
+                  <Input
+                    value={selectedSignature.data.organization ?? ''}
+                    onChange={(event) => updateSignatureData({ organization: event.target.value })}
+                  />
+                </Field>
+                <Field label="Email">
+                  <Input value={selectedSignature.data.email} onChange={(event) => updateSignatureData({ email: event.target.value })} />
+                </Field>
+                <Field label="Website">
+                  <Input
+                    value={selectedSignature.data.website}
+                    onChange={(event) => updateSignatureData({ website: event.target.value })}
+                  />
+                </Field>
+                <Field label="Phone">
+                  <Input value={selectedSignature.data.phone} onChange={(event) => updateSignatureData({ phone: event.target.value })} />
+                </Field>
+                <Field label="Location">
+                  <Input
+                    value={selectedSignature.data.location ?? ''}
+                    onChange={(event) => updateSignatureData({ location: event.target.value })}
+                  />
+                </Field>
+                <Field label="Profile Image">
+                  <select
+                    value={selectedSignature.data.profileSrc}
+                    onChange={(event) =>
+                      updateSignatureData({
+                        profileSrc: event.target.value,
+                        profileAlt: profileOptions.find((option) => option.value === event.target.value)?.label ??
+                          selectedSignature.data.profileAlt,
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    {profileOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Logos">
+                  <LogoMultiSelect
+                    selected={selectedSignature.data.logos}
+                    onChange={(next) => updateSignatureData({ logos: next })}
+                  />
+                </Field>
+              </EditorSection>
+
+              <EditorSection title="HTML" description="Copy the signature HTML for email clients.">
+                <Textarea value={signatureHtml} readOnly rows={8} />
+                {statusMessage && <p className="text-xs text-slate-500">{statusMessage}</p>}
+              </EditorSection>
+            </>
+          )}
+        </aside>
+
+        <section className="print-area flex flex-col items-center">
+          {documentType === 'resume' && (
+            <div className="w-full">
+              <ResumePreview template={selectedResume} />
             </div>
-          </div>
-        </div>
-      </div>
+          )}
+          {documentType === 'cover-letter' && (
+            <div className="w-full">
+              <CoverLetterPreview data={selectedCoverLetter.data} config={selectedCoverLetter.config} />
+            </div>
+          )}
+          {documentType === 'email-signature' && (
+            <div className="w-full">
+              <EmailSignaturePreview template={selectedSignature} />
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   )
 }

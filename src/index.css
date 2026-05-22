@@ -1,198 +1,475 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:wght@400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Apple's 2024 Color System */
-  --background: #f5f5f7;
-  --foreground: hsl(0 0% 6%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 6%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 6%);
-  --primary: hsl(212 100% 50%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(0 0% 45%);
-  --secondary-foreground: hsl(0 0% 100%);
-  --muted: hsl(0 0% 98%);
-  --muted-foreground: hsl(0 0% 45%);
-  --accent: hsl(0 0% 96%);
-  --accent-foreground: hsl(0 0% 6%);
-  --destructive: hsl(0 84% 60%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(0 0% 92%);
-  --input: hsl(0 0% 96%);
-  --ring: hsl(212 100% 50%);
+  --background: #f6f2ea;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #0f172a;
+  --primary-foreground: #f8fafc;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #e2e8f0;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0f172a;
   --radius: 1rem;
-  
-  /* Clean Effects */
-  --glass-bg: hsl(0 0% 100%);
-  --glass-border: hsl(0 0% 90%);
-  --glass-shadow: hsla(0 0% 0% / 0.1);
-  
-  /* Apple Typography - SF Pro Font System */
-  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-serif: 'Source Serif 4', 'Times New Roman', serif;
 }
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  font-family: var(--font-text);
-  background-color: var(--background);
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(circle at top left, rgba(14, 116, 144, 0.12), transparent 45%),
+    radial-gradient(circle at 20% 40%, rgba(251, 191, 36, 0.12), transparent 40%),
+    linear-gradient(120deg, #fdfbf7, #f4f2ec);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Print Styles for Cover Letter PDF Generation */
+h1, h2, h3, h4 {
+  font-family: var(--font-sans);
+}
+
+.cover-letter-preview,
+.resume-preview,
+.signature-preview {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+}
+
+.cover-letter-preview {
+  font-family: var(--font-serif);
+  color: #0f172a;
+}
+
+.cover-letter-preview h1,
+.cover-letter-preview h2,
+.cover-letter-preview h3,
+.cover-letter-preview h4 {
+  font-family: var(--font-sans);
+}
+
+.resume-preview {
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --accent-dark: #1e3a8a;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: var(--font-serif);
+  color: #0f172a;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.resume-preview h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.resume-preview h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.resume-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  padding-bottom: 16px;
+}
+
+.resume-header-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.resume-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+.resume-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.resume-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #1f2937;
+}
+
+.resume-contact-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.resume-summary {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.resume-section-heading h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.resume-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resume-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.resume-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.resume-grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.resume-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.resume-card {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.resume-card h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.resume-card-subtitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.resume-card-org {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.resume-card-location {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.resume-card-date {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.resume-card-header {
+  display: flex;
+  gap: 12px;
+}
+
+.resume-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resume-logo-dark {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+.resume-logo img {
+  max-width: 28px;
+  max-height: 28px;
+  object-fit: contain;
+}
+
+.resume-card-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.resume-bullets {
+  margin-top: 10px;
+  padding-left: 18px;
+  list-style: disc;
+  color: #1f2937;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.resume-bullets li::marker {
+  color: var(--accent);
+}
+
+.resume-skills {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resume-skill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.resume-group-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.resume-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resume-stat {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.resume-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.resume-stat-logos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resume-stat-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.resume-stat-logo img {
+  max-width: 14px;
+  max-height: 14px;
+  object-fit: contain;
+}
+
+.signature-preview {
+  padding: 18px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.signature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: var(--font-sans);
+  color: #0f172a;
+}
+
+.signature-signoff {
+  font-weight: 500;
+  font-size: 0.86rem;
+  color: #475569;
+}
+
+.signature-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.signature-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.signature-identity h3 {
+  font-size: 1.75rem;
+  line-height: 1.06;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.signature-role {
+  font-size: 0.9rem;
+  line-height: 1.28;
+  font-weight: 600;
+  color: #334155;
+}
+
+.signature-org {
+  font-size: 0.82rem;
+  line-height: 1.28;
+  color: #475569;
+}
+
+.signature-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: #1f2937;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.signature-contact li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.signature-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.signature-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.signature-logo {
+  width: 36px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.signature-logo img {
+  max-width: 28px;
+  max-height: 14px;
+  object-fit: contain;
+}
+
 @media print {
-  /* Set page size to US Letter (8.5 x 11 inches) */
   @page {
     size: letter;
-    margin: 0.5in 0.75in;
+    margin: 0.45in 0.55in;
   }
 
-  /* Hide all UI elements except cover letter content */
-  nav,
-  header,
-  footer,
-  button,
+  body {
+    background: #ffffff !important;
+  }
+
   .no-print {
     display: none !important;
   }
 
-  /* Hide header section with title and selectors */
-  .max-w-6xl > div:first-child,
-  .max-w-6xl > div:nth-child(2),
-  .max-w-6xl > div:nth-child(3) {
-    display: none !important;
-  }
-
-  /* Reset backgrounds and containers */
-  .min-h-screen {
-    background: white !important;
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
     padding: 0 !important;
-    min-height: auto !important;
-  }
-
-  .max-w-6xl,
-  .max-w-4xl {
-    max-width: 100% !important;
     margin: 0 !important;
   }
 
-  /* Cover letter page specific - Single page with exact UI */
-  .cover-letter-page {
-    background: white !important;
+  .resume-preview,
+  .cover-letter-preview,
+  .signature-preview {
+    box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    box-shadow: none !important;
-    padding: 0.5in 0.75in !important;
-    margin: 0 !important;
-    width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    page-break-after: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  /* Preserve exact UI styling */
-  .bg-white {
-    background: white !important;
-  }
-
-  /* Typography - Preserve sizes */
-  h1 {
-    font-size: 28pt !important;
-  }
-
-  h2 {
-    font-size: 16pt !important;
-  }
-
-  p,
-  li,
-  span {
-    font-size: 10pt !important;
-  }
-
-  .text-sm {
-    font-size: 9pt !important;
-  }
-
-  .text-base {
-    font-size: 10pt !important;
-  }
-
-  .text-xs {
-    font-size: 8pt !important;
-  }
-
-  /* Ensure colors print exactly */
-  .text-blue-600 {
-    color: #2563eb !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .text-blue-500 {
-    color: #3b82f6 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .text-red-600 {
-    color: #dc2626 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .text-red-500 {
-    color: #ef4444 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .text-gray-900 {
-    color: #111827 !important;
-  }
-
-  .text-gray-700 {
-    color: #374151 !important;
-  }
-
-  .text-gray-600 {
-    color: #4b5563 !important;
-  }
-
-  /* Icons - make sure they print */
-  svg {
-    print-color-adjust: exact !important;
-    -webkit-print-color-adjust: exact !important;
-  }
-
-  /* Remove all shadows and effects for clean print */
-  * {
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-
-  /* Ensure links are properly styled for print */
-  a {
-    text-decoration: none;
-    color: inherit;
-  }
-
-  /* Keep elements together */
-  .cover-letter-page > * {
-    page-break-inside: avoid !important;
+    width: 100% !important;
   }
 }
-

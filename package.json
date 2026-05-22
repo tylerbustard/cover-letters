@@ -1,5 +1,5 @@
 {
-  "name": "cover-letters",
+  "name": "career-document-studio",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -28,4 +28,3 @@
     "vite": "^5.4.19"
   }
 }
-

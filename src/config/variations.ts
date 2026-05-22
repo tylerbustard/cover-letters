@@ -1,9 +1,9 @@
 import profileImage from '@/assets/profile-tyler.png'
-import queensLogo from '@/assets/queens-logo.png'
-import unbLogo from '@/assets/unb-logo.png'
-import uoftLogo from '@/assets/uoft-logo.png'
-import mcgillLogo from '@/assets/mcgill-logo.png'
-import signatureImage from '@/assets/tyler-signature.png'
+import queensLogo from '@/assets/logos/queens.png'
+import unbLogo from '@/assets/logos/unb.png'
+import uoftLogo from '@/assets/logos/uoft.png'
+import mcgillLogo from '@/assets/logos/mcgill.png'
+import signatureImage from '@/assets/signature-tyler.png'
 
 import { CoverLetterData, VariationId } from '@/types'
 
@@ -30,7 +30,7 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
   {
     id: 'queens',
     label: "Queen's University",
-    description: "Queen's Smith School of Business styling",
+    description: "Queen's University styling preset",
     accent: '#0f3d61',
     accentLight: '#e5efff',
     accentDark: '#0a2740',
@@ -136,4 +136,3 @@ export const VARIATION_MAP = COVER_LETTER_VARIATIONS.reduce<Record<VariationId, 
   },
   {} as Record<VariationId, VariationConfig>,
 )
-

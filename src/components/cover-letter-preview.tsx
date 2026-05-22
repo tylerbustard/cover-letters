@@ -1,7 +1,7 @@
 import { type CSSProperties } from 'react'
 import { Mail, Phone, Globe, MapPin, type LucideIcon } from 'lucide-react'
 
-import { type VariationConfig } from '@/config/variations'
+import type { CoverLetterTemplate } from '@/types'
 import { getContactItems, getLetterParagraphs, getRecipientLines, getOpportunitySummary, type ContactItem } from '@/lib/letter'
 import { cn } from '@/lib/utils'
 import { type CoverLetterData } from '@/types'
@@ -97,9 +97,11 @@ const LetterBody = ({
   )
 }
 
+type CoverLetterPreviewConfig = CoverLetterTemplate['config']
+
 interface PreviewProps {
   data: CoverLetterData
-  config: VariationConfig
+  config: CoverLetterPreviewConfig
 }
 
 const CoverLetterHeader = ({ data, config }: PreviewProps) => {
@@ -168,12 +170,12 @@ const CoverLetterHeader = ({ data, config }: PreviewProps) => {
 
 export interface CoverLetterPreviewProps {
   data: CoverLetterData
-  config: VariationConfig
+  config: CoverLetterPreviewConfig
 }
 
 export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) => (
   <div
-    className="bg-white rounded-3xl shadow-xl border border-gray-200 print:shadow-none print:border-0"
+    className="cover-letter-preview bg-white rounded-3xl shadow-xl border border-gray-200 print:shadow-none print:border-0"
     style={LETTER_BASE_STYLE}
   >
     <CoverLetterHeader data={data} config={config} />
@@ -186,5 +188,3 @@ export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) =>
     />
   </div>
 )
-
-

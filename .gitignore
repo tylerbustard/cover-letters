@@ -29,4 +29,4 @@ cf_tunnel_*.pid
 *.preview_url_*
 cf_tunnel_*.log
 dev_server_*.log
-
+unified-app/
