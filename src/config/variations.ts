@@ -30,7 +30,7 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
   {
     id: 'queens',
     label: "Queen's University",
-    description: "Queen's Smith School of Business styling",
+    description: "Queen's University styling preset",
     accent: '#0f3d61',
     accentLight: '#e5efff',
     accentDark: '#0a2740',
