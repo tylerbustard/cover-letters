@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210" height="64" viewBox="0 0 210 64" role="img" aria-labelledby="title desc">
+  <title id="title">Royal Bank of Canada</title>
+  <desc id="desc">RBC wordmark</desc>
+  <rect width="210" height="64" rx="16" fill="#ffffff"/>
+  <rect x="8" y="8" width="56" height="48" rx="12" fill="#005aa8"/>
+  <text x="36" y="40" text-anchor="middle" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#ffd200">RBC</text>
+  <text x="76" y="28" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#005aa8">Royal Bank</text>
+  <text x="76" y="46" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#005aa8">of Canada</text>
+</svg>

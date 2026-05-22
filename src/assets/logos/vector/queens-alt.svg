@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="64" viewBox="0 0 280 64" role="img" aria-labelledby="title desc">
+  <title id="title">Queen's University</title>
+  <desc id="desc">Queen's University wordmark</desc>
+  <rect width="280" height="64" rx="16" fill="#ffffff"/>
+  <path d="M18 12h28v12c0 14-7 23-14 28-7-5-14-14-14-28V12Z" fill="#c99700"/>
+  <text x="60" y="29" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#111827">Queen's</text>
+  <text x="60" y="47" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#6b7280">University</text>
+</svg>

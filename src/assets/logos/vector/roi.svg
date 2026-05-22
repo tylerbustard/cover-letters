@@ -1,0 +1,17 @@
+<svg role="img" aria-labelledby="title desc" viewBox="0 0 236 96" xmlns="http://www.w3.org/2000/svg">
+  <title id="title">ROI</title>
+  <desc id="desc">ROI wordmark</desc>
+  <defs>
+    <linearGradient id="roiGradient" x1="18" x2="92" y1="82" y2="15" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2400a8"/>
+      <stop offset="0.22" stop-color="#352bff"/>
+      <stop offset="0.45" stop-color="#2cb8b3"/>
+      <stop offset="0.62" stop-color="#d2df36"/>
+      <stop offset="0.78" stop-color="#ffcc00"/>
+      <stop offset="0.90" stop-color="#ff2a8a"/>
+      <stop offset="1" stop-color="#7b004f"/>
+    </linearGradient>
+  </defs>
+  <path d="M47 4.5c4.4-2.5 9.6-2.5 14 0l25.2 14.6c4.3 2.5 7 7.1 7 12.1v29.1c0 5-2.7 9.6-7 12.1L61 87c-4.4 2.5-9.6 2.5-14 0L21.8 72.4c-4.3-2.5-7-7.1-7-12.1V31.2c0-5 2.7-9.6 7-12.1L47 4.5Z" fill="none" stroke="url(#roiGradient)" stroke-width="13" stroke-linejoin="round"/>
+  <text x="122" y="70" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="800" fill="#111111">roi</text>
+</svg>

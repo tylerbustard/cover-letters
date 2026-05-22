@@ -46,11 +46,10 @@ export default {
         ring: "var(--ring)",
       },
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "'SF Pro Display'", "system-ui", "'Segoe UI'", "Roboto", "Helvetica", "Arial", "sans-serif"],
-        display: ["-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "'SF Pro Text'", "system-ui", "'Segoe UI'", "Roboto", "Helvetica", "Arial", "sans-serif"],
+        sans: ["'Space Grotesk'", "'Segoe UI'", "sans-serif"],
+        display: ["'Space Grotesk'", "'Segoe UI'", "sans-serif"],
       },
     },
   },
   plugins: [],
 } satisfies Config;
-

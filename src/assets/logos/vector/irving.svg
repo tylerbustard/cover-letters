@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="64" viewBox="0 0 250 64" role="img" aria-labelledby="title desc">
+  <title id="title">Irving Oil</title>
+  <desc id="desc">Irving Oil wordmark</desc>
+  <rect width="250" height="64" rx="16" fill="#ffffff"/>
+  <path d="M30 14c7 6 11 12 11 20 0 8-6 16-15 16S11 43 11 33c0-7 5-13 19-19Z" fill="#1f7a3f"/>
+  <text x="58" y="39" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="26" font-weight="800" fill="#1f7a3f">Irving Oil</text>
+</svg>

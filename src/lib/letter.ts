@@ -51,6 +51,10 @@ export const getLetterParagraphs = (data: CoverLetterData) => [
 export const getRecipientLines = (data: CoverLetterData) => {
   const lines: string[] = []
 
+  if (hasValue(data.hiringManager)) {
+    lines.push(data.hiringManager.trim())
+  }
+
   if (hasValue(data.companyName)) {
     lines.push(data.companyName.trim())
   }
@@ -104,4 +108,3 @@ export const getOpportunitySummary = (data: CoverLetterData) => {
 
   return 'Opportunities in finance and technology'
 }
-

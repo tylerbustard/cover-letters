@@ -8,6 +8,7 @@ interface CoverLetterData {
   yourName: string;
   yourEmail: string;
   yourPhone: string;
+  yourWebsite: string;
   yourAddress: string;
   companyAddress: string;
   openingParagraph: string;
@@ -88,7 +89,7 @@ export default function CoverLetterVariation({ data, variation }: CoverLetterVar
               </div>
               <div className="flex items-center gap-1.5">
                 <Globe className={`w-3.5 h-3.5 ${colors.accent}`} />
-                <span>tylerbustard.ca</span>
+                <span>{data.yourWebsite}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <MapPin className={`w-3.5 h-3.5 ${colors.accent}`} />
@@ -131,4 +132,3 @@ export default function CoverLetterVariation({ data, variation }: CoverLetterVar
     </div>
   );
 }
-

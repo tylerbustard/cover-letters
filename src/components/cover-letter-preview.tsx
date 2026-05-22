@@ -1,190 +1,360 @@
-import { type CSSProperties } from 'react'
-import { Mail, Phone, Globe, MapPin, type LucideIcon } from 'lucide-react'
+import { Globe, Mail, MapPin, Phone } from 'lucide-react'
 
-import { type VariationConfig } from '@/config/variations'
-import { getContactItems, getLetterParagraphs, getRecipientLines, getOpportunitySummary, type ContactItem } from '@/lib/letter'
-import { cn } from '@/lib/utils'
-import { type CoverLetterData } from '@/types'
+import { resolveStudioAssetSrc } from '@/data/assets'
+import { getLetterParagraphs, getRecipientLines } from '@/lib/letter'
+import type { CoverLetterData, CoverLetterTemplate } from '@/types'
 
-const LETTER_BASE_STYLE: CSSProperties = {
-  width: '100%',
-  maxWidth: '21.59cm',
-  minHeight: '27.94cm',
-  padding: '1.5cm 1.27cm 2.54cm 1.27cm',
-  margin: '0 auto',
-  boxSizing: 'border-box',
-}
-
-const CONTACT_ICONS: Record<ContactItem['type'], LucideIcon> = {
-  email: Mail,
-  phone: Phone,
-  website: Globe,
-  address: MapPin,
-}
-
-interface LetterBodyProps {
+interface CoverLetterPreviewProps {
   data: CoverLetterData
-  paragraphsClassName?: string
-  greetingColor?: string
-  signatureColor?: string
-  signatureSrc?: string
-  signatureAlt?: string
-  contentWrapperClassName?: string
+  config: CoverLetterTemplate['config']
 }
 
-const LetterBody = ({
-  data,
-  paragraphsClassName,
-  greetingColor,
-  signatureColor,
-  signatureSrc,
-  signatureAlt,
-  contentWrapperClassName,
-}: LetterBodyProps) => {
+const SHARED_IDENTITY_SUMMARY =
+  'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.'
+
+export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) => {
   const paragraphs = getLetterParagraphs(data)
   const recipientLines = getRecipientLines(data)
   const greetingName = data.hiringManager.trim() || 'Hiring Manager'
+  const websiteLabel = data.yourWebsite.replace(/^https?:\/\//u, '')
+  const websiteHref = `https://${websiteLabel}`
+  const phoneHref = `tel:${data.yourPhone.replace(/[^+\d]/gu, '')}`
 
   return (
-    <div className={cn('text-[15px] leading-relaxed text-gray-800', contentWrapperClassName)}>
-      {data.date.trim().length > 0 && (
-        <p className="text-sm text-gray-600 mb-6">{data.date}</p>
-      )}
+    <>
+      <div className="max-w-4xl mx-auto">
+        <div className="resume-page bg-white px-10 py-9 md:px-11 md:py-10 print:shadow-none print:px-0 print:py-0">
+          <article className="cover-letter-document cover-letter-sheet">
+            <header className="resume-header cover-letter-document-header">
+              <div className="resume-header-top cover-letter-document-header-top">
+                <div className="resume-header-portrait-shell">
+                  <div className="resume-header-portrait-frame">
+                    <img
+                      src={resolveStudioAssetSrc(config.profileSrc, config.profileSrc)}
+                      alt={config.profileAlt}
+                      className="resume-header-portrait-image"
+                    />
+                  </div>
+                </div>
+                <div className="resume-header-copy">
+                  <h1 className="resume-header-name">{data.yourName}</h1>
+                </div>
+              </div>
+              <div className="resume-header-contact cover-letter-document-contact-rail">
+                <a href={`mailto:${data.yourEmail}`} className="resume-header-contact-link" aria-label="Email Tyler Bustard">
+                  <Mail size={13} />
+                  {data.yourEmail}
+                </a>
+                <span className="resume-contact-separator" aria-hidden="true" />
+                <a href={phoneHref} className="resume-header-contact-link" aria-label="Call Tyler Bustard">
+                  <Phone size={13} />
+                  {data.yourPhone}
+                </a>
+                <span className="resume-contact-separator" aria-hidden="true" />
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="resume-header-contact-link" aria-label="Visit Tyler Bustard website">
+                  <Globe size={13} />
+                  {websiteLabel}
+                </a>
+                <span className="resume-contact-separator" aria-hidden="true" />
+                <span className="resume-header-contact-item">
+                  <MapPin size={13} />
+                  {data.yourAddress}
+                </span>
+              </div>
+              <hr className="resume-header-divider" />
+            </header>
 
-      {recipientLines.length > 0 && (
-        <div className="text-sm text-gray-700 mb-6 space-y-1">
-          {recipientLines.map((line, index) => (
-            <p key={index}>{line}</p>
-          ))}
+            <section className="resume-summary-section cover-letter-document-summary-section">
+              <p className="resume-summary-text">{SHARED_IDENTITY_SUMMARY}</p>
+            </section>
+
+            <section className="cover-letter-document-section">
+              <hr className="cover-letter-document-section-divider" />
+              <div className="cover-letter-document-copy">
+                <p className="cover-letter-document-date">{data.date}</p>
+
+                <div className="cover-letter-document-recipient">
+                  {recipientLines.length > 0 ? (
+                    recipientLines.map((line) => (
+                      <p key={line} className="cover-letter-document-recipient-line">
+                        {line}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="cover-letter-document-recipient-line">Recipient details</p>
+                  )}
+                </div>
+
+                <div className="cover-letter-document-body">
+                  <p className="cover-letter-document-greeting">Dear {greetingName},</p>
+                  <div className="cover-letter-document-paragraphs">
+                    {paragraphs.map((paragraph) => (
+                      <p key={paragraph} className="whitespace-pre-line">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                  <div className="cover-letter-document-signoff">
+                    <p className="cover-letter-document-signoff-label">Sincerely,</p>
+                    <img
+                      src={resolveStudioAssetSrc(config.signatureSrc, config.signatureSrc)}
+                      alt={config.signatureAlt}
+                      className="cover-letter-document-signature"
+                    />
+                    <p className="cover-letter-document-signature-name">{data.yourName}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </article>
         </div>
-      )}
-
-      <div
-        className="text-base font-medium mb-5"
-        style={greetingColor ? { color: greetingColor } : undefined}
-      >
-        Dear {greetingName},
       </div>
 
-      <div className={cn('space-y-5 text-gray-800', paragraphsClassName)}>
-        {paragraphs.map((paragraph, index) => (
-          <p key={index} className="whitespace-pre-line">
-            {paragraph}
-          </p>
-        ))}
-      </div>
+      <style>{`
+        @media print {
+          @page {
+            size: letter portrait;
+            margin: 0.4in 0.5in;
+          }
 
-      <div className="mt-8 text-gray-900">
-        <p className="mb-2">Sincerely,</p>
-        {signatureSrc && (
-          <div className="mb-2">
-            <img
-              src={signatureSrc}
-              alt={signatureAlt ?? `${data.yourName} signature`}
-              className="h-14 w-auto object-contain"
-              style={{ filter: 'grayscale(100%)' }}
-            />
-          </div>
-        )}
-        <p
-          className="font-semibold text-gray-900"
-          style={signatureColor ? { color: signatureColor } : undefined}
-        >
-          {data.yourName}
-        </p>
-      </div>
-    </div>
+          :root {
+            --pdf-density: 0.97;
+            --pdf-page-margin-top-bottom: 0.40in;
+            --pdf-page-margin-left-right: 0.50in;
+            --pdf-space-1: calc(2pt * var(--pdf-density));
+            --pdf-space-2: calc(4pt * var(--pdf-density));
+            --pdf-space-3: calc(6pt * var(--pdf-density));
+            --pdf-space-4: calc(8pt * var(--pdf-density));
+            --pdf-space-5: calc(12pt * var(--pdf-density));
+            --pdf-space-6: calc(16pt * var(--pdf-density));
+            --pdf-column-gap: calc(12pt * var(--pdf-density));
+            --pdf-heading-size: calc(9.3pt * var(--pdf-density));
+          }
+
+          *,
+          *::before,
+          *::after {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          body,
+          html {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 8.35pt !important;
+            line-height: 1.34 !important;
+          }
+
+          nav,
+          footer,
+          button,
+          .glass-panel,
+          .glass-navbar,
+          .print\\:hidden,
+          .no-print,
+          .studio-shell-header,
+          .studio-editor-rail,
+          .studio-preview-header {
+            display: none !important;
+          }
+
+          .min-h-screen {
+            background: white !important;
+            padding: 0 !important;
+            min-height: auto !important;
+          }
+
+          .max-w-4xl {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .studio-shell,
+          .studio-workspace,
+          .print-area,
+          .studio-preview-shell,
+          .studio-preview-stage {
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            max-width: 100% !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+          }
+
+          .resume-page {
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
+            min-height: auto !important;
+          }
+
+          .cover-letter-document {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: var(--pdf-space-5) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .resume-header {
+            margin-bottom: 0 !important;
+          }
+
+          .resume-header-top {
+            display: grid !important;
+            grid-template-columns: 56px 1fr !important;
+            align-items: center !important;
+            column-gap: var(--pdf-column-gap) !important;
+          }
+
+          .resume-header-portrait-frame {
+            width: 56px !important;
+            height: 56px !important;
+            border-radius: 9999px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+
+          .resume-header-portrait-image {
+            width: 56px !important;
+            height: 56px !important;
+            aspect-ratio: 1 / 1 !important;
+            object-fit: cover !important;
+            object-position: center 12% !important;
+          }
+
+          .resume-header-name {
+            font-family: var(--font-display) !important;
+            font-size: 22pt !important;
+            line-height: 0.96 !important;
+            letter-spacing: -0.04em !important;
+            font-weight: 700 !important;
+            font-feature-settings: 'kern' 1 !important;
+            text-rendering: optimizeLegibility !important;
+            margin: 0 !important;
+          }
+
+          .resume-header-contact {
+            margin-top: var(--pdf-space-3) !important;
+            gap: var(--pdf-space-1) var(--pdf-space-3) !important;
+            font-size: 8.2pt !important;
+            justify-content: flex-start !important;
+          }
+
+          .resume-header-contact a,
+          .resume-header-contact span {
+            font-size: 8.2pt !important;
+          }
+
+          .resume-contact-separator {
+            display: inline-block !important;
+            height: var(--pdf-space-4) !important;
+          }
+
+          .resume-header-divider {
+            margin-top: var(--pdf-space-3) !important;
+            border-top: 1px solid #cbd5e1 !important;
+          }
+
+          .resume-summary-section {
+            margin-bottom: 0 !important;
+          }
+
+          p,
+          li,
+          span,
+          a,
+          .cover-letter-document-recipient-line,
+          .cover-letter-document-date,
+          .cover-letter-document-greeting,
+          .cover-letter-document-paragraphs p,
+          .cover-letter-document-signoff-label,
+          .cover-letter-document-signature-name {
+            font-size: 8.2pt !important;
+            line-height: 1.34 !important;
+          }
+
+          a {
+            color: inherit !important;
+            text-decoration: none !important;
+          }
+
+          .resume-summary-text {
+            font-size: 8.5pt !important;
+            line-height: 1.42 !important;
+          }
+
+          .resume-header,
+          .resume-summary-section,
+          .resume-page section {
+            margin: 0 !important;
+          }
+
+          .resume-page section {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          .cover-letter-document-section-divider {
+            margin: 0 0 var(--pdf-space-4) !important;
+            border: 0 !important;
+            border-top: 1px solid #cbd5e1 !important;
+          }
+
+          .cover-letter-document-copy {
+            gap: 0 !important;
+            max-width: none !important;
+          }
+
+          .cover-letter-document-date {
+            margin: 0 0 var(--pdf-space-3) !important;
+          }
+
+          .cover-letter-document-recipient {
+            margin: 0 0 var(--pdf-space-4) !important;
+            gap: 0.5pt !important;
+          }
+
+          .cover-letter-document-body {
+            margin-top: 0 !important;
+          }
+
+          .cover-letter-document-greeting {
+            margin: 0 !important;
+          }
+
+          .cover-letter-document-paragraphs {
+            margin-top: var(--pdf-space-4) !important;
+            gap: var(--pdf-space-4) !important;
+          }
+
+          .cover-letter-document-signoff {
+            margin-top: var(--pdf-space-5) !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          .cover-letter-document-signature {
+            margin-top: var(--pdf-space-2) !important;
+            height: 24pt !important;
+          }
+
+          .cover-letter-document-signature-name {
+            margin-top: var(--pdf-space-1) !important;
+          }
+        }
+      `}</style>
+    </>
   )
 }
-
-interface PreviewProps {
-  data: CoverLetterData
-  config: VariationConfig
-}
-
-const CoverLetterHeader = ({ data, config }: PreviewProps) => {
-  const contactItems = getContactItems(data)
-
-  return (
-    <header className="mb-10 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <img
-            src={config.profileSrc}
-            alt={config.profileAlt}
-            className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg object-cover"
-          />
-          <div>
-            <span className="text-xs uppercase tracking-[0.28em] text-gray-500 block mb-1">
-              {config.organization}
-            </span>
-            <h2 className="text-3xl font-semibold text-gray-900 tracking-tight">
-              {data.yourName}
-            </h2>
-            <p className="text-base font-semibold" style={{ color: config.accent }}>
-              {config.tagline}
-            </p>
-          </div>
-        </div>
-
-        <div
-          className="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl border shadow-sm"
-          style={{
-            borderColor: `${config.accent}26`,
-            backgroundColor: config.accentLight,
-          }}
-        >
-          <img src={config.logoSrc} alt={config.logoAlt} className="max-w-10 max-h-10 object-contain" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-        {contactItems.map((item) => {
-          const Icon = CONTACT_ICONS[item.type]
-
-          return (
-            <div
-              key={item.type}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-gray-700 shadow-sm"
-            >
-              <Icon className="w-4 h-4" style={{ color: config.accent }} />
-              <span className="font-medium">{item.value}</span>
-            </div>
-          )
-        })}
-      </div>
-
-      <p className="text-sm text-gray-700 leading-relaxed border-t border-gray-200 pt-4">
-        {config.summary}
-      </p>
-
-      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-gray-500">
-        <span className="font-semibold text-gray-700">Opportunity:</span>
-        <span className="text-gray-600">{getOpportunitySummary(data)}</span>
-      </div>
-    </header>
-  )
-}
-
-export interface CoverLetterPreviewProps {
-  data: CoverLetterData
-  config: VariationConfig
-}
-
-export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) => (
-  <div
-    className="bg-white rounded-3xl shadow-xl border border-gray-200 print:shadow-none print:border-0"
-    style={LETTER_BASE_STYLE}
-  >
-    <CoverLetterHeader data={data} config={config} />
-    <LetterBody
-      data={data}
-      greetingColor={config.accentDark}
-      signatureColor={config.accentDark}
-      signatureSrc={config.signatureSrc}
-      signatureAlt={config.signatureAlt}
-    />
-  </div>
-)
-
-

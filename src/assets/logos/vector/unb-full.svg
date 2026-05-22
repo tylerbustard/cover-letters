@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="64" viewBox="0 0 300 64" role="img" aria-labelledby="title desc">
+  <title id="title">University of New Brunswick</title>
+  <desc id="desc">University of New Brunswick wordmark</desc>
+  <rect width="300" height="64" rx="16" fill="#ffffff"/>
+  <path d="M18 12h28v12c0 14-7 23-14 28-7-5-14-14-14-28V12Z" fill="#c1121f"/>
+  <text x="58" y="29" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="20" font-weight="800" fill="#c1121f">University of</text>
+  <text x="58" y="48" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="20" font-weight="800" fill="#c1121f">New Brunswick</text>
+</svg>

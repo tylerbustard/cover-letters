@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="64" viewBox="0 0 280 64" role="img" aria-labelledby="title desc">
+  <title id="title">Grant Thornton</title>
+  <desc id="desc">Grant Thornton wordmark</desc>
+  <rect width="280" height="64" rx="16" fill="#ffffff"/>
+  <path d="M20 12h28v16H36v24H20V12Zm16 24h12v16H36V36Z" fill="#5b2d90"/>
+  <text x="64" y="40" font-family="Aptos, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#5b2d90">Grant Thornton</text>
+</svg>

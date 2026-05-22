@@ -15,6 +15,6 @@ export default defineConfig({
   },
   server: {
     port: parseInt(process.env.PORT || '5005'),
+    strictPort: true,
   },
 })
-

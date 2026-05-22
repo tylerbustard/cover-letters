@@ -1,0 +1,163 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[dev]
+  port = 8888
+  targetPort = 5005
+
+[[headers]]
+  for = "/studio/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Referrer-Policy = "same-origin"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Referrer-Policy = "same-origin"
+
+[[redirects]]
+  from = "/api/auth/login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/auth/logout"
+  to = "/.netlify/functions/auth-logout"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/auth/session"
+  to = "/.netlify/functions/auth-session"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/documents/:type"
+  to = "/.netlify/functions/documents?type=:type"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/automation/documents/:type/:templateId"
+  to = "/.netlify/functions/automation-documents?type=:type&templateId=:templateId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/automation/drafts"
+  to = "/.netlify/functions/automation-drafts"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/automation/drafts/:draftId/apply"
+  to = "/.netlify/functions/automation-drafts?draftId=:draftId&action=apply"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/automation/drafts/:draftId"
+  to = "/.netlify/functions/automation-drafts?draftId=:draftId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/automation/exports"
+  to = "/.netlify/functions/automation-exports"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/automation/artifacts/:artifactId"
+  to = "/.netlify/functions/automation-artifacts?artifactId=:artifactId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/token"
+  to = "/.netlify/functions/ai-token"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/capabilities"
+  to = "/.netlify/functions/ai-capabilities"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/schema/:type"
+  to = "/.netlify/functions/ai-schema?type=:type"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/documents/:type/:templateId"
+  to = "/.netlify/functions/ai-documents?type=:type&templateId=:templateId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/drafts"
+  to = "/.netlify/functions/ai-drafts"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/drafts/:draftId/apply"
+  to = "/.netlify/functions/ai-drafts?draftId=:draftId&action=apply"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/drafts/:draftId"
+  to = "/.netlify/functions/ai-drafts?draftId=:draftId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/exports"
+  to = "/.netlify/functions/ai-exports"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai/artifacts/:artifactId"
+  to = "/.netlify/functions/ai-artifacts?artifactId=:artifactId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/ai-review/:draftId/apply"
+  to = "/.netlify/functions/ai-review?draftId=:draftId&action=apply"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/ai-review/:draftId/reject"
+  to = "/.netlify/functions/ai-review?draftId=:draftId&action=reject"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/ai-review-state/:documentType/:templateId"
+  to = "/.netlify/functions/ai-review?documentType=:documentType&templateId=:templateId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/ai-preview/:documentType/:templateId"
+  to = "/.netlify/functions/ai-preview?documentType=:documentType&templateId=:templateId"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
