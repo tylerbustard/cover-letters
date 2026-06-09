@@ -1,5 +1,22 @@
+import { Globe, Mail, MapPin, Phone } from 'lucide-react'
+import type { ReactElement } from 'react'
+
 import { getMonochromeLogoSrc, resolveStudioAssetSrc } from '@/data/assets'
+import {
+  SIGNATURE_CERTIFICATION_LOGO_VALUES,
+  SIGNATURE_EXPERIENCE_LOGO_VALUES,
+  getSignatureEducationLogoValues,
+  normalizeSignatureLogos,
+} from '@/lib/signature-logo-groups'
+import { getSignatureAffiliationDisplayRows } from '@/lib/signature-identity'
 import type { EmailSignatureTemplate } from '@/types'
+
+const SIGNATURE_CONTACT_ICONS: Record<string, ReactElement> = {
+  phone: <Phone size={12} />,
+  email: <Mail size={12} />,
+  website: <Globe size={12} />,
+  location: <MapPin size={12} />,
+}
 
 interface EmailSignaturePreviewProps {
   template: EmailSignatureTemplate
@@ -34,13 +51,25 @@ const SignatureLogoGroup = ({ logos }: SignatureLogoGroupProps) => {
 
 export const EmailSignaturePreview = ({ template }: EmailSignaturePreviewProps) => {
   const { data } = template
-  const hasRole = data.role.trim().length > 0
-  const hasOrganization = Boolean(data.organization?.trim())
-  const experienceLogos = data.experienceLogos.map((logo) => ({
+  const affiliationRows = getSignatureAffiliationDisplayRows(data)
+  const experienceLogos = normalizeSignatureLogos(
+    data.experienceLogos,
+    SIGNATURE_EXPERIENCE_LOGO_VALUES,
+  ).map((logo) => ({
     ...logo,
     src: data.logoTone === 'original' ? logo.src : getMonochromeLogoSrc(logo.src),
   }))
-  const educationLogos = data.educationLogos.map((logo) => ({
+  const educationLogos = normalizeSignatureLogos(
+    data.educationLogos,
+    getSignatureEducationLogoValues(template.id),
+  ).map((logo) => ({
+    ...logo,
+    src: data.logoTone === 'original' ? logo.src : getMonochromeLogoSrc(logo.src),
+  }))
+  const certificationLogos = normalizeSignatureLogos(
+    data.certificationLogos,
+    SIGNATURE_CERTIFICATION_LOGO_VALUES,
+  ).map((logo) => ({
     ...logo,
     src: data.logoTone === 'original' ? logo.src : getMonochromeLogoSrc(logo.src),
   }))
@@ -91,9 +120,21 @@ export const EmailSignaturePreview = ({ template }: EmailSignaturePreviewProps) 
 
           <div className="signature-document-copy">
             <h2 className="signature-document-name">{data.name}</h2>
-            {hasRole ? <p className="signature-document-role">{data.role}</p> : null}
-            {hasOrganization ? (
-              <p className="signature-document-organization">{data.organization}</p>
+            {affiliationRows.length > 0 ? (
+              <div className="signature-document-affiliation-group">
+                {affiliationRows.map((row, index) => (
+                  <p
+                    key={`${row}-${index}`}
+                    className={
+                      index === 0
+                        ? 'signature-document-affiliation signature-document-affiliation-institution'
+                        : 'signature-document-affiliation signature-document-affiliation-role'
+                    }
+                  >
+                    {row}
+                  </p>
+                ))}
+              </div>
             ) : null}
           </div>
         </div>
@@ -109,10 +150,22 @@ export const EmailSignaturePreview = ({ template }: EmailSignaturePreviewProps) 
                     rel={item.key === 'website' ? 'noopener noreferrer' : undefined}
                     className="signature-document-contact-item"
                   >
+                    {SIGNATURE_CONTACT_ICONS[item.key] ? (
+                      <span className="signature-document-contact-icon" aria-hidden="true">
+                        {SIGNATURE_CONTACT_ICONS[item.key]}
+                      </span>
+                    ) : null}
                     {item.value}
                   </a>
                 ) : (
-                  <span className="signature-document-contact-item">{item.value}</span>
+                  <span className="signature-document-contact-item">
+                    {SIGNATURE_CONTACT_ICONS[item.key] ? (
+                      <span className="signature-document-contact-icon" aria-hidden="true">
+                        {SIGNATURE_CONTACT_ICONS[item.key]}
+                      </span>
+                    ) : null}
+                    {item.value}
+                  </span>
                 )}
                 {index < contactItems.length - 1 ? (
                   <span className="signature-document-contact-separator" aria-hidden="true">
@@ -129,6 +182,7 @@ export const EmailSignaturePreview = ({ template }: EmailSignaturePreviewProps) 
         <div className="signature-document-logos">
           <SignatureLogoGroup logos={experienceLogos} />
           <SignatureLogoGroup logos={educationLogos} />
+          <SignatureLogoGroup logos={certificationLogos} />
         </div>
       </div>
     </div>

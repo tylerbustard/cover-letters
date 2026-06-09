@@ -16,6 +16,7 @@ interface CoverLetterData {
   bodyParagraph2: string;
   bodyParagraph3: string;
   closingParagraph: string;
+  signoffLabel: string;
 }
 
 interface CoverLetterVariationProps {
@@ -111,22 +112,24 @@ export default function CoverLetterVariation({ data, variation }: CoverLetterVar
       </div>
 
       {/* Greeting */}
-      <div className="mb-4">
-        <p className="text-gray-900">Dear {data.hiringManager},</p>
-      </div>
+      {data.hiringManager && (
+        <div className="mb-4">
+          <p className="text-gray-900">Dear {data.hiringManager},</p>
+        </div>
+      )}
 
       {/* Body */}
       <div className="space-y-4 mb-4 text-gray-900 leading-relaxed">
-        <p>{data.openingParagraph || `I am writing to express my strong interest in the ${data.position} position at ${data.companyName}. With my background in finance and technology, I am excited about the opportunity to contribute to your team.`}</p>
+        {data.openingParagraph && <p>{data.openingParagraph}</p>}
         {data.bodyParagraph1 && <p>{data.bodyParagraph1}</p>}
         {data.bodyParagraph2 && <p>{data.bodyParagraph2}</p>}
         {data.bodyParagraph3 && <p>{data.bodyParagraph3}</p>}
-        <p>{data.closingParagraph || `I am eager to bring my skills and passion to ${data.companyName} and would welcome the opportunity to discuss how my experience aligns with your needs. Thank you for considering my application.`}</p>
+        {data.closingParagraph && <p>{data.closingParagraph}</p>}
       </div>
 
       {/* Closing */}
       <div className="mt-8">
-        <p className="text-gray-900 mb-2">Sincerely,</p>
+        {data.signoffLabel && <p className="text-gray-900 mb-2">{data.signoffLabel}</p>}
         <p className="text-gray-900 font-medium">{data.yourName}</p>
       </div>
     </div>

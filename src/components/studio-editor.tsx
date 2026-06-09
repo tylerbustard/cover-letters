@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Download, LogOut, Mail, Save } from 'lucide-react'
+import { Bot, ClipboardList, Copy, Download, FileText, Layers, LogOut, Mail, Save, ShieldCheck } from 'lucide-react'
 
 import { CoverLetterPreview } from '@/components/cover-letter-preview'
 import { EmailSignaturePreview } from '@/components/email-signature-preview'
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import profileTyler from '@/assets/profile-tyler.png'
-import { assets, logoOptions, profileOptions, resolveStudioAssetSrc, signatureOptions } from '@/data/assets'
+import { logoOptions, profileOptions, signatureOptions } from '@/data/assets'
 import {
   applyAiReviewDraft,
   getAiReviewState,
@@ -23,11 +23,24 @@ import {
   getDefaultSignatureState,
 } from '@/lib/studio-defaults'
 import { migrateCoverLetterState, migrateResumeState, migrateSignatureState } from '@/lib/studio-migrations'
+import { STUDIO_EDIT_SCHEMA } from '@/lib/studio-edit-schema'
+import { buildStudioFieldMap, type StudioFieldMap } from '@/lib/studio-field-map'
 import {
   buildSignatureHtml,
   buildSignatureHtmlFragment,
   buildSignaturePlainText,
 } from '@/lib/signature-html'
+import {
+  SIGNATURE_CERTIFICATION_LOGO_VALUES,
+  SIGNATURE_EXPERIENCE_LOGO_VALUES,
+  canonicalizeSignatureLogoSrc,
+  getSignatureCertificationLogoOptions,
+  getSignatureEducationLogoOptions,
+  getSignatureEducationLogoValues,
+  getSignatureExperienceLogoOptions,
+  normalizeSignatureLogos,
+} from '@/lib/signature-logo-groups'
+import { normalizeSignatureAffiliationLines } from '@/lib/signature-identity'
 import { cn } from '@/lib/utils'
 import type {
   CoverLetterId,
@@ -53,6 +66,11 @@ const selectClassName =
   'h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400'
 
 const makeId = (prefix: string) => `${prefix}-${Date.now()}-${Math.round(Math.random() * 10000)}`
+const normalizeGroupColumns = (value: unknown) => {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
+  if (!Number.isFinite(parsed)) return 2
+  return Math.min(3, Math.max(1, Math.round(parsed)))
+}
 
 const splitLines = (value: string) =>
   value
@@ -70,36 +88,8 @@ const joinLines = (lines: string[]) => lines.join('\n')
 const joinComma = (items: string[]) => items.join(', ')
 
 const findLogoLabel = (src: string) => logoOptions.find((option) => option.value === src)?.label ?? 'Logo'
-
-const SIGNATURE_EXPERIENCE_LOGO_VALUES = new Set([
-  assets.logo73Strings,
-  assets.logoRoi,
-  assets.logoBmo,
-  assets.logoTd,
-  assets.logoRbc,
-  assets.logoIrving,
-  assets.logoGrantThornton,
-])
-
-const SIGNATURE_EDUCATION_LOGO_VALUES: Record<SignatureId, Set<string>> = {
-  unb: new Set([assets.logoUnbFull]),
-  mcgill: new Set([assets.logoMcgillAlt, assets.logoUnbFull]),
-  queens: new Set([assets.logoQueensAlt, assets.logoUnbFull]),
-  rotman: new Set([assets.logoRotman, assets.logoUnbFull]),
-  strings: new Set([assets.logoUnbFull]),
-}
-
-const normalizeSignatureLogos = (selected: { src: string; alt: string }[], allowedValues: Set<string>) => {
-  const seen = new Set<string>()
-  return selected.filter((logo) => {
-    if (!allowedValues.has(logo.src) || seen.has(logo.src)) return false
-    seen.add(logo.src)
-    return true
-  })
-}
-
-const getSignatureEducationLogoOptions = (signatureId: SignatureId) =>
-  logoOptions.filter((option) => (SIGNATURE_EDUCATION_LOGO_VALUES[signatureId] ?? SIGNATURE_EDUCATION_LOGO_VALUES.queens).has(option.value))
+const getSectionAnchorId = (value: string) =>
+  `studio-section-${value.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '')}`
 
 const formatDiffValue = (value: unknown) => {
   if (value === null || typeof value === 'undefined') {
@@ -120,26 +110,6 @@ const formatTimestamp = (value?: string) => {
   return parsed.toLocaleString()
 }
 
-const normalizeStudioAssetValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeStudioAssetValue)
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entryValue]) => {
-        if (typeof entryValue === 'string' && key.endsWith('Src')) {
-          return [key, resolveStudioAssetSrc(entryValue, entryValue)]
-        }
-
-        return [key, normalizeStudioAssetValue(entryValue)]
-      }),
-    )
-  }
-
-  return value
-}
-
 const EditorSection = ({
   title,
   description,
@@ -149,7 +119,7 @@ const EditorSection = ({
   description?: string
   children: React.ReactNode
 }) => (
-  <section className="studio-panel">
+  <section className="studio-panel" id={getSectionAnchorId(title)}>
     <div className="studio-panel-header">
       <p className="studio-panel-kicker">{title}</p>
       {description && <p className="studio-panel-copy">{description}</p>}
@@ -162,6 +132,31 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   <div className="studio-field">
     <Label className="studio-field-label">{label}</Label>
     {children}
+  </div>
+)
+
+const formatDocumentTypeLabel = (documentType: DocumentType) =>
+  STUDIO_EDIT_SCHEMA.documents[documentType].displayName
+
+const formatAllowedOps = (ops: string[]) => ops.join(', ')
+
+const StudioMetric = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string | number
+}) => (
+  <div className="studio-metric-card">
+    <span className="studio-metric-icon" aria-hidden="true">
+      {icon}
+    </span>
+    <div>
+      <p className="studio-metric-label">{label}</p>
+      <p className="studio-metric-value">{value}</p>
+    </div>
   </div>
 )
 
@@ -224,7 +219,7 @@ const LogoMultiSelect = ({
 }) => (
   <div className="studio-logo-grid">
     {options.map((option) => {
-      const checked = selected.some((logo) => logo.src === option.value)
+      const checked = selected.some((logo) => canonicalizeSignatureLogoSrc(logo.src) === option.value)
 
       return (
         <label key={option.value} className="studio-checkbox-row">
@@ -233,9 +228,12 @@ const LogoMultiSelect = ({
             checked={checked}
             onChange={(event) => {
               if (event.target.checked) {
-                onChange([...selected, { src: option.value, alt: option.label }])
+                onChange([
+                  ...selected.filter((logo) => canonicalizeSignatureLogoSrc(logo.src) !== option.value),
+                  { src: option.value, alt: option.label },
+                ])
               } else {
-                onChange(selected.filter((logo) => logo.src !== option.value))
+                onChange(selected.filter((logo) => canonicalizeSignatureLogoSrc(logo.src) !== option.value))
               }
             }}
           />
@@ -245,6 +243,143 @@ const LogoMultiSelect = ({
     })}
   </div>
 )
+
+const StudioOverviewPanel = ({
+  documentType,
+  templateLabel,
+  outputLabel,
+  fieldCount,
+  collectionCount,
+  pendingDraftCount,
+}: {
+  documentType: DocumentType
+  templateLabel: string
+  outputLabel: string
+  fieldCount: number
+  collectionCount: number
+  pendingDraftCount: number
+}) => {
+  const sections = STUDIO_EDIT_SCHEMA.documents[documentType].sections
+
+  return (
+    <EditorSection title="Workspace" description="Current document, editable surface, and output state.">
+      <div className="studio-overview-hero">
+        <div>
+          <p className="studio-overview-label">{formatDocumentTypeLabel(documentType)}</p>
+          <h2 className="studio-overview-title">{templateLabel}</h2>
+        </div>
+        <span className="studio-overview-output">{outputLabel}</span>
+      </div>
+
+      <div className="studio-metric-grid">
+        <StudioMetric icon={<FileText size={15} />} label="Sections" value={sections.length} />
+        <StudioMetric icon={<Bot size={15} />} label="AI fields" value={fieldCount} />
+        <StudioMetric icon={<Layers size={15} />} label="Collections" value={collectionCount} />
+        <StudioMetric icon={<ClipboardList size={15} />} label="Drafts" value={pendingDraftCount} />
+      </div>
+
+      <nav className="studio-section-jump-list" aria-label={`${formatDocumentTypeLabel(documentType)} sections`}>
+        {sections.map((section) => (
+          <a key={section.id} href={`#${getSectionAnchorId(section.label)}`} className="studio-section-jump">
+            <span>{section.label}</span>
+            <small>{section.description}</small>
+          </a>
+        ))}
+      </nav>
+    </EditorSection>
+  )
+}
+
+const StudioAiMapPanel = ({
+  documentType,
+  fieldMap,
+  onCopy,
+}: {
+  documentType: DocumentType
+  fieldMap: StudioFieldMap
+  onCopy: () => void
+}) => {
+  const sections = STUDIO_EDIT_SCHEMA.documents[documentType].sections.map((section) => ({
+    ...section,
+    fields: fieldMap.fields.filter((fieldEntry) => fieldEntry.sectionId === section.id),
+    collections: fieldMap.collections.filter((collectionEntry) => collectionEntry.sectionId === section.id),
+  }))
+  const lockedRules = STUDIO_EDIT_SCHEMA.documents[documentType].lockedRules
+
+  return (
+    <EditorSection title="AI Field Map" description="Exact editable IDs exposed to reviewed AI drafts.">
+      <div className="studio-ai-map-toolbar">
+        <div className="studio-ai-map-summary">
+          <span>
+            <Bot size={14} />
+            {fieldMap.fields.length} fields
+          </span>
+          <span>
+            <Layers size={14} />
+            {fieldMap.collections.length} collections
+          </span>
+        </div>
+        <Button variant="outline" size="sm" onClick={onCopy}>
+          <Copy /> Copy map
+        </Button>
+      </div>
+
+      <div className="studio-locked-rule-list">
+        {lockedRules.map((rule) => (
+          <div key={rule} className="studio-locked-rule">
+            <ShieldCheck size={14} />
+            <span>{rule}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="studio-ai-map-list">
+        {sections.map((section) => (
+          <details key={section.id} className="studio-ai-map-section" open={documentType !== 'resume'}>
+            <summary>
+              <span>{section.label}</span>
+              <small>
+                {section.fields.length} fields
+                {section.collections.length ? ` / ${section.collections.length} collections` : ''}
+              </small>
+            </summary>
+
+            {section.fields.length > 0 ? (
+              <div className="studio-ai-map-entry-list">
+                {section.fields.map((fieldEntry) => (
+                  <div key={fieldEntry.fieldId} className="studio-ai-map-entry">
+                    <div>
+                      <p>{fieldEntry.fieldLabel}</p>
+                      {fieldEntry.ownerLabel ? <small>{fieldEntry.ownerLabel}</small> : null}
+                    </div>
+                    <code>{fieldEntry.fieldId}</code>
+                    <span>{fieldEntry.valueType}</span>
+                    <small>{formatAllowedOps(fieldEntry.allowedOps)}</small>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {section.collections.length > 0 ? (
+              <div className="studio-ai-collection-list">
+                {section.collections.map((collectionEntry) => (
+                  <div key={collectionEntry.collectionId} className="studio-ai-collection-entry">
+                    <div>
+                      <p>{collectionEntry.entryType}</p>
+                      {collectionEntry.ownerLabel ? <small>{collectionEntry.ownerLabel}</small> : null}
+                    </div>
+                    <code>{collectionEntry.collectionId}</code>
+                    <span>{collectionEntry.itemIds.length} items</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </details>
+        ))}
+      </div>
+    </EditorSection>
+  )
+}
 
 interface StudioEditorProps {
   initialDocumentType: DocumentType
@@ -259,8 +394,6 @@ export function StudioEditor({
   onLogout,
   session,
 }: StudioEditorProps) {
-  const defaultResumeTemplates = useMemo(() => getDefaultResumeState().templates, [])
-  const defaultCoverLetterTemplates = useMemo(() => getDefaultCoverLetterState().templates, [])
   const [documentType, setDocumentType] = useState<DocumentType>(initialDocumentType)
   const [resumeTemplates, setResumeTemplates] = useState<ResumeTemplate[]>(() => getDefaultResumeState().templates)
   const [resumeId, setResumeId] = useState<ResumeId>(() => getDefaultResumeState().selectedId)
@@ -280,49 +413,18 @@ export function StudioEditor({
   const selectedCoverLetter = coverLetters.find((template) => template.id === coverLetterId) ?? coverLetters[0]
   const selectedSignature =
     signatureTemplates.find((template) => template.id === signatureId) ?? signatureTemplates[0]
+  const activeTemplate =
+    documentType === 'resume'
+      ? selectedResume
+      : documentType === 'cover-letter'
+        ? selectedCoverLetter
+        : selectedSignature
   const activeTemplateId =
     documentType === 'resume'
       ? selectedResume?.id
       : documentType === 'cover-letter'
         ? selectedCoverLetter?.id
         : selectedSignature?.id
-  const canonicalPublicResume =
-    defaultResumeTemplates.find((template) => template.id === 'unb') ?? defaultResumeTemplates[0]
-  const canonicalCoverLetter =
-    defaultCoverLetterTemplates.find((template) => template.id === 'unb') ?? defaultCoverLetterTemplates[0]
-  const normalizedSelectedResumeData = useMemo(
-    () => normalizeStudioAssetValue(selectedResume.data),
-    [selectedResume.data],
-  )
-  const normalizedCanonicalPublicResumeData = useMemo(
-    () => normalizeStudioAssetValue(canonicalPublicResume?.data),
-    [canonicalPublicResume],
-  )
-  const normalizedSelectedCoverLetter = useMemo(
-    () =>
-      normalizeStudioAssetValue({
-        config: selectedCoverLetter.config,
-        data: selectedCoverLetter.data,
-      }),
-    [selectedCoverLetter.config, selectedCoverLetter.data],
-  )
-  const normalizedCanonicalCoverLetter = useMemo(
-    () =>
-      normalizeStudioAssetValue({
-        config: canonicalCoverLetter?.config,
-        data: canonicalCoverLetter?.data,
-      }),
-    [canonicalCoverLetter],
-  )
-  const matchesCanonicalPublicResume =
-    selectedResume.id === canonicalPublicResume?.id &&
-    JSON.stringify(normalizedSelectedResumeData) === JSON.stringify(normalizedCanonicalPublicResumeData)
-  const matchesCanonicalCoverLetter =
-    selectedCoverLetter.id === canonicalCoverLetter?.id &&
-    JSON.stringify(normalizedSelectedCoverLetter) === JSON.stringify(normalizedCanonicalCoverLetter)
-  const shouldUseCanonicalPublicResumePdf = resumeId === 'unb' || matchesCanonicalPublicResume
-  const shouldUseCanonicalCoverLetterPdf = coverLetterId === 'unb' && matchesCanonicalCoverLetter
-
   const signatureHtml = useMemo(() => buildSignatureHtml(selectedSignature), [selectedSignature])
   const signatureHtmlFragment = useMemo(
     () => buildSignatureHtmlFragment(selectedSignature),
@@ -337,11 +439,11 @@ export function StudioEditor({
       resume: {
         kicker: 'Resume Studio',
         title: selectedResume.label,
-        copy: 'Editorial preview and export tuned to the TylerBustard.ca resume system.',
+        copy: 'Editorial preview and export tuned to the TylerBustard.com resume system.',
       },
       'cover-letter': {
         kicker: 'Cover Letter Studio',
-        title: selectedCoverLetter.label,
+        title: selectedCoverLetter.config.presetLabel || selectedCoverLetter.label,
         copy: 'Unified application letter styling with a cleaner hierarchy and print-ready structure.',
       },
       'email-signature': {
@@ -350,8 +452,61 @@ export function StudioEditor({
         copy: 'Grouped experience and education logo strips, updated typography, and production-ready HTML export.',
       },
     }),
-    [selectedCoverLetter.label, selectedResume.label, selectedSignature.label],
+    [selectedCoverLetter.config.presetLabel, selectedCoverLetter.label, selectedResume.label, selectedSignature.label],
   )
+  const activeTemplateLabel =
+    documentType === 'resume'
+      ? selectedResume.label
+      : documentType === 'cover-letter'
+        ? selectedCoverLetter.config.presetLabel || selectedCoverLetter.label
+        : selectedSignature.label
+  const activeOutputLabel = documentType === 'email-signature' ? 'HTML signature' : 'PDF document'
+  const activeFieldMap = useMemo(
+    () => buildStudioFieldMap(documentType, activeTemplate),
+    [activeTemplate, documentType],
+  )
+  const aiFieldMapText = useMemo(() => {
+    const lines = [
+      `schemaVersion: ${STUDIO_EDIT_SCHEMA.schemaVersion}`,
+      `documentType: ${documentType}`,
+      `templateId: ${activeTemplateId}`,
+      `templateLabel: ${activeTemplateLabel}`,
+      '',
+      'fields:',
+      ...activeFieldMap.fields.map((fieldEntry) =>
+        [
+          `- ${fieldEntry.fieldId}`,
+          `label=${fieldEntry.fieldLabel}`,
+          `section=${fieldEntry.sectionLabel}`,
+          `type=${fieldEntry.valueType}`,
+          `ops=${formatAllowedOps(fieldEntry.allowedOps)}`,
+          fieldEntry.ownerLabel ? `owner=${fieldEntry.ownerLabel}` : '',
+        ]
+          .filter(Boolean)
+          .join(' | '),
+      ),
+    ]
+
+    if (activeFieldMap.collections.length > 0) {
+      lines.push(
+        '',
+        'collections:',
+        ...activeFieldMap.collections.map((collectionEntry) =>
+          [
+            `- ${collectionEntry.collectionId}`,
+            `section=${collectionEntry.sectionLabel}`,
+            `entryType=${collectionEntry.entryType}`,
+            `items=${collectionEntry.itemIds.join(', ') || 'none'}`,
+            collectionEntry.ownerLabel ? `owner=${collectionEntry.ownerLabel}` : '',
+          ]
+            .filter(Boolean)
+            .join(' | '),
+        ),
+      )
+    }
+
+    return lines.join('\n')
+  }, [activeFieldMap.collections, activeFieldMap.fields, activeTemplateId, activeTemplateLabel, documentType])
 
   const loadSingleDocument = useCallback(async (type: DocumentType) => {
     const response = await getStoredDocument<unknown>(type)
@@ -505,9 +660,7 @@ export function StudioEditor({
 
       try {
         await saveStoredDocument('resume', { selectedId: resumeId, templates: resumeTemplates })
-        const exportUrl = shouldUseCanonicalPublicResumePdf
-          ? '/Tyler-Bustard-Resume.pdf'
-          : `/studio/resume/pdf?template=${encodeURIComponent(resumeId)}&autoprint=1`
+        const exportUrl = `/studio/resume/pdf?template=${encodeURIComponent(resumeId)}&autoprint=1`
 
         if (exportWindow) {
           exportWindow.location.href = exportUrl
@@ -515,11 +668,7 @@ export function StudioEditor({
           window.location.assign(exportUrl)
         }
 
-        pushStatusMessage(
-          shouldUseCanonicalPublicResumePdf
-            ? 'Canonical resume PDF ready to download.'
-            : 'Resume PDF ready to save.',
-        )
+        pushStatusMessage('Resume PDF ready to save.')
       } catch (error) {
         exportWindow?.close()
         pushStatusMessage(
@@ -539,9 +688,7 @@ export function StudioEditor({
           selectedId: coverLetterId,
           templates: coverLetters,
         })
-        const exportUrl = shouldUseCanonicalCoverLetterPdf
-          ? '/Tyler-Bustard-Cover-Letter.pdf'
-          : `/studio/cover-letter/pdf?template=${encodeURIComponent(coverLetterId)}&autoprint=1`
+        const exportUrl = `/studio/cover-letter/pdf?template=${encodeURIComponent(coverLetterId)}&autoprint=1`
 
         if (exportWindow) {
           exportWindow.location.href = exportUrl
@@ -549,11 +696,7 @@ export function StudioEditor({
           window.location.assign(exportUrl)
         }
 
-        pushStatusMessage(
-          shouldUseCanonicalCoverLetterPdf
-            ? 'Canonical cover letter PDF ready to download.'
-            : 'Cover letter PDF ready to save.',
-        )
+        pushStatusMessage('Cover letter PDF ready to save.')
       } catch (error) {
         exportWindow?.close()
         pushStatusMessage(
@@ -591,6 +734,15 @@ export function StudioEditor({
       pushStatusMessage('Signature copied as plain text fallback.')
     } catch {
       pushStatusMessage('Unable to copy signature HTML right now.', 3200)
+    }
+  }
+
+  const handleCopyAiFieldMap = async () => {
+    try {
+      await navigator.clipboard.writeText(aiFieldMapText)
+      pushStatusMessage('AI field map copied.')
+    } catch {
+      pushStatusMessage('Unable to copy the AI field map right now.', 3200)
     }
   }
 
@@ -1071,6 +1223,10 @@ export function StudioEditor({
   const updateCoverLetterConfig = (patch: Partial<CoverLetterTemplate['config']>) => {
     updateCoverLetterTemplate(coverLetterId, (template) => ({
       ...template,
+      label:
+        typeof patch.presetLabel === 'string' && patch.presetLabel.trim()
+          ? patch.presetLabel.trim()
+          : template.label,
       config: {
         ...template.config,
         ...patch,
@@ -1096,34 +1252,38 @@ export function StudioEditor({
   }
 
   const updateSignatureData = (patch: Partial<EmailSignatureTemplate['data']>) => {
-    updateSignatureTemplate(signatureId, (template) => ({
-      ...template,
-      data: {
+    updateSignatureTemplate(signatureId, (template) => {
+      const nextData = {
         ...template.data,
         ...patch,
-        ...(template.id === 'queens'
-          ? {
-              email:
-                typeof patch.email === 'string' && patch.email.includes('.')
-                  ? patch.email.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com')
-                  : template.data.email.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com'),
-              website:
-                typeof patch.website === 'string' && patch.website.includes('.')
-                  ? patch.website.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com')
-                  : template.data.website.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com'),
-              experienceLogos: normalizeSignatureLogos(
-                (patch.experienceLogos ?? template.data.experienceLogos) as { src: string; alt: string }[],
-                SIGNATURE_EXPERIENCE_LOGO_VALUES,
-              ),
-              educationLogos: normalizeSignatureLogos(
-                (patch.educationLogos ??
-                  template.data.educationLogos) as { src: string; alt: string }[],
-                SIGNATURE_EDUCATION_LOGO_VALUES.queens,
-              ),
-            }
-          : {}),
-      },
-    }))
+      }
+
+      return {
+        ...template,
+        data: {
+          ...nextData,
+          ...(template.id === 'queens'
+            ? {
+                email:
+                  typeof patch.email === 'string' && patch.email.includes('.')
+                    ? patch.email.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com')
+                    : nextData.email.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com'),
+                website:
+                  typeof patch.website === 'string' && patch.website.includes('.')
+                    ? patch.website.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com')
+                    : nextData.website.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com'),
+              }
+            : {}),
+          experienceLogos: normalizeSignatureLogos(nextData.experienceLogos, SIGNATURE_EXPERIENCE_LOGO_VALUES),
+          educationLogos: normalizeSignatureLogos(
+            nextData.educationLogos,
+            getSignatureEducationLogoValues(template.id),
+          ),
+          certificationLogos: normalizeSignatureLogos(nextData.certificationLogos, SIGNATURE_CERTIFICATION_LOGO_VALUES),
+          affiliationLines: normalizeSignatureAffiliationLines(nextData),
+        },
+      }
+    })
   }
 
   return (
@@ -1197,6 +1357,21 @@ export function StudioEditor({
 
       <main className="studio-workspace">
         <aside className="studio-editor-rail no-print">
+          <StudioOverviewPanel
+            documentType={documentType}
+            templateLabel={activeTemplateLabel}
+            outputLabel={activeOutputLabel}
+            fieldCount={activeFieldMap.fields.length}
+            collectionCount={activeFieldMap.collections.length}
+            pendingDraftCount={aiReviewState?.pendingDrafts.length ?? 0}
+          />
+
+          <StudioAiMapPanel
+            documentType={documentType}
+            fieldMap={activeFieldMap}
+            onCopy={handleCopyAiFieldMap}
+          />
+
           {documentType === 'resume' && (
             <>
               <EditorSection title="Template" description="Presets now control content only. Styling stays unified.">
@@ -1381,6 +1556,21 @@ export function StudioEditor({
                           <option value="grid">Grid</option>
                         </select>
                       </Field>
+                      <Field label="Grid columns">
+                        <select
+                          value={String(normalizeGroupColumns(group.columns))}
+                          onChange={(event) =>
+                            updateExperienceGroup(groupIndex, {
+                              columns: normalizeGroupColumns(event.target.value),
+                            })
+                          }
+                          className={selectClassName}
+                        >
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                        </select>
+                      </Field>
                     </InlineFields>
                     {group.items.map((item, itemIndex) => (
                       <ItemCard
@@ -1504,6 +1694,16 @@ export function StudioEditor({
                             ))}
                           </select>
                         </Field>
+                        <label className="studio-checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(item.emphasis)}
+                            onChange={(event) =>
+                              updateCertificationItem(areaIndex, itemIndex, { emphasis: event.target.checked })
+                            }
+                          />
+                          <span>Emphasize certification</span>
+                        </label>
                       </ItemCard>
                     ))}
                     <Button variant="outline" onClick={() => addCertificationItem(areaIndex)}>
@@ -1535,6 +1735,21 @@ export function StudioEditor({
                         >
                           <option value="stack">Stack</option>
                           <option value="grid">Grid</option>
+                        </select>
+                      </Field>
+                      <Field label="Grid columns">
+                        <select
+                          value={String(normalizeGroupColumns(group.columns))}
+                          onChange={(event) =>
+                            updateLeadershipGroup(groupIndex, {
+                              columns: normalizeGroupColumns(event.target.value),
+                            })
+                          }
+                          className={selectClassName}
+                        >
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
                         </select>
                       </Field>
                     </InlineFields>
@@ -1602,7 +1817,7 @@ export function StudioEditor({
                   >
                     {coverLetters.map((template) => (
                       <option key={template.id} value={template.id}>
-                        {template.label}
+                        {template.config.presetLabel || template.label}
                       </option>
                     ))}
                   </select>
@@ -1611,7 +1826,7 @@ export function StudioEditor({
                   <Field label="Preset label">
                     <Input value={selectedCoverLetter.config.presetLabel} onChange={(event) => updateCoverLetterConfig({ presetLabel: event.target.value })} />
                   </Field>
-                  <Field label="Tagline">
+                  <Field label="Header title">
                     <Input value={selectedCoverLetter.config.tagline} onChange={(event) => updateCoverLetterConfig({ tagline: event.target.value })} />
                   </Field>
                 </InlineFields>
@@ -1722,6 +1937,9 @@ export function StudioEditor({
                 <Field label="Closing">
                   <Textarea value={selectedCoverLetter.data.closingParagraph} onChange={(event) => updateCoverLetterData({ closingParagraph: event.target.value })} />
                 </Field>
+                <Field label="Signoff label">
+                  <Input value={selectedCoverLetter.data.signoffLabel} onChange={(event) => updateCoverLetterData({ signoffLabel: event.target.value })} />
+                </Field>
               </EditorSection>
             </>
           )}
@@ -1744,23 +1962,26 @@ export function StudioEditor({
                 </Field>
               </EditorSection>
 
-              <EditorSection title="Identity" description="Preview and export share the same updated structure.">
+              <EditorSection title="Identity" description="Name, title, institution line, contact details, and logo groups used by preview and export.">
                 <InlineFields>
                   <Field label="Name">
                     <Input value={selectedSignature.data.name} onChange={(event) => updateSignatureData({ name: event.target.value })} />
-                  </Field>
-                  <Field label="Role">
-                    <Input value={selectedSignature.data.role} onChange={(event) => updateSignatureData({ role: event.target.value })} />
-                  </Field>
-                </InlineFields>
-                <InlineFields>
-                  <Field label="Organization">
-                    <Input value={selectedSignature.data.organization ?? ''} onChange={(event) => updateSignatureData({ organization: event.target.value })} />
                   </Field>
                   <Field label="Signoff">
                     <Input value={selectedSignature.data.signoff ?? ''} onChange={(event) => updateSignatureData({ signoff: event.target.value })} />
                   </Field>
                 </InlineFields>
+                <Field label="Affiliation lines">
+                  <Textarea
+                    value={joinLines(normalizeSignatureAffiliationLines(selectedSignature.data))}
+                    onChange={(event) =>
+                      updateSignatureData({
+                        affiliationLines: splitLines(event.target.value),
+                      })
+                    }
+                    rows={4}
+                  />
+                </Field>
                 <InlineFields>
                   <Field label="Email">
                     <Input value={selectedSignature.data.email} onChange={(event) => updateSignatureData({ email: event.target.value })} />
@@ -1795,13 +2016,27 @@ export function StudioEditor({
                         {option.label}
                       </option>
                     ))}
-                    </select>
+                  </select>
+                </Field>
+                <Field label="Logo tone">
+                  <select
+                    value={selectedSignature.data.logoTone ?? 'original'}
+                    onChange={(event) =>
+                      updateSignatureData({
+                        logoTone: event.target.value as EmailSignatureTemplate['data']['logoTone'],
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="original">Original</option>
+                    <option value="monochrome">Monochrome</option>
+                  </select>
                 </Field>
                 <Field label="Experience logos">
                   <LogoMultiSelect
                     selected={selectedSignature.data.experienceLogos}
                     onChange={(next) => updateSignatureData({ experienceLogos: next })}
-                    options={logoOptions.filter((option) => SIGNATURE_EXPERIENCE_LOGO_VALUES.has(option.value))}
+                    options={getSignatureExperienceLogoOptions()}
                   />
                 </Field>
                 <Field label="Education logos">
@@ -1809,6 +2044,13 @@ export function StudioEditor({
                     selected={selectedSignature.data.educationLogos}
                     onChange={(next) => updateSignatureData({ educationLogos: next })}
                     options={getSignatureEducationLogoOptions(selectedSignature.id)}
+                  />
+                </Field>
+                <Field label="Certification logos">
+                  <LogoMultiSelect
+                    selected={selectedSignature.data.certificationLogos}
+                    onChange={(next) => updateSignatureData({ certificationLogos: next })}
+                    options={getSignatureCertificationLogoOptions()}
                   />
                 </Field>
               </EditorSection>
@@ -1821,7 +2063,7 @@ export function StudioEditor({
 
           <EditorSection
             title="AI Draft Review"
-            description="AI can propose content-only edits against the locked schema. Review the exact diffs here before anything is applied."
+            description="AI can propose reviewed edits against the customizable document schema. Review the exact diffs here before anything is applied."
           >
             {isLoadingAiReview ? (
               <p className="studio-ai-review-copy">Loading AI review state…</p>
@@ -1859,7 +2101,7 @@ export function StudioEditor({
             aiReviewState &&
             aiReviewState.pendingDrafts.length === 0 ? (
               <p className="studio-ai-review-copy">
-                No pending AI drafts for this template. Locked headings, spacing, layout, and export rules remain system-owned.
+                No pending AI drafts for this template. Content, grouping, logos, and visible metadata can be customized; export mechanics stay protected.
               </p>
             ) : null}
 

@@ -2,6 +2,10 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto
 import { basename, extname } from 'node:path'
 
 import { STUDIO_EDIT_SCHEMA } from '../../src/lib/studio-edit-schema.ts'
+import {
+  getSignatureAffiliationDisplayRows,
+  normalizeSignatureAffiliationLines,
+} from '../../src/lib/signature-identity.ts'
 import { getDocumentsStore, json, parseBody, requireSession } from './_utils.mjs'
 
 const DOCUMENT_TYPES = new Set(['resume', 'cover-letter', 'email-signature'])
@@ -43,6 +47,7 @@ const ASSET_ALIAS_MAP = {
   irving: ['irving'],
   mcgill: ['mcgill'],
   'mcgill-alt': ['mcgill-alt'],
+  ncc: ['ncc', 'northeast-christian-college', 'northeast_christian_college'],
   queens: ['queens'],
   'queens-alt': ['queens-alt'],
   rbc: ['rbc'],
@@ -59,10 +64,46 @@ const ASSET_ALIAS_MAP = {
   'signature-tyler': ['signature-tyler'],
 }
 
+const SIGNATURE_EXPERIENCE_LOGO_TOKENS = new Set([
+  '73strings',
+  'roi',
+  'bmo',
+  'td',
+  'rbc',
+  'irving',
+  'grant-thornton',
+])
+
+const SIGNATURE_CERTIFICATION_LOGO_TOKENS = new Set([
+  'bloomberg',
+  'cfa',
+  'coursera',
+  'csi',
+  'ets',
+  'training-the-street',
+  'wall-street-prep',
+])
+
+const SIGNATURE_EDUCATION_LOGO_TOKENS = {
+  unb: new Set(['unb-full']),
+  mcgill: new Set(['mcgill-alt', 'unb-full']),
+  queens: new Set(['queens-alt', 'unb-full']),
+  rotman: new Set(['rotman', 'unb-full']),
+  strings: new Set(['unb-full']),
+}
+
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const asString = (value, fallback = '') => (typeof value === 'string' ? value : fallback)
 const asArray = (value) => (Array.isArray(value) ? value : [])
+const clampEntryGroupColumns = (value) => {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
+  if (!Number.isFinite(parsed)) return 2
+  return Math.min(3, Math.max(1, Math.round(parsed)))
+}
+const normalizeLayout = (value) => (asString(value).toLowerCase() === 'grid' ? 'grid' : 'stack')
+const normalizeColumn = (value) => (asString(value).toLowerCase() === 'right' ? 'right' : 'left')
+const normalizeLogoTone = (value) => (asString(value).toLowerCase() === 'monochrome' ? 'monochrome' : 'original')
 const escapeHtml = (value) =>
   asString(value)
     .replace(/&/g, '&amp;')
@@ -71,7 +112,7 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 const getStudioOrigin = (event) => {
-  const host = event?.headers?.['x-forwarded-host'] || event?.headers?.host || 'tylerbustard.com'
+  const host = event?.headers?.['x-forwarded-host'] || event?.headers?.host || 'finchat.ca'
   const proto = event?.headers?.['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https')
   return `${proto}://${host}`
 }
@@ -300,6 +341,35 @@ const toAssetTokenList = (value, source = 'logos') => {
   return [...new Set(tokens)]
 }
 
+const getSignatureEducationLogoTokens = (templateId) =>
+  SIGNATURE_EDUCATION_LOGO_TOKENS[templateId] ?? SIGNATURE_EDUCATION_LOGO_TOKENS.unb
+
+const normalizeSignatureLogoTokens = (value, allowedTokens) =>
+  toAssetTokenList(value, 'logos').filter((token) => allowedTokens.has(token))
+
+const getAllowedSignatureLogoTokensForField = (template, descriptor) => {
+  if (descriptor.documentType !== 'email-signature') return null
+  if (descriptor.jsonPath === 'data.experienceLogos') return SIGNATURE_EXPERIENCE_LOGO_TOKENS
+  if (descriptor.jsonPath === 'data.certificationLogos') return SIGNATURE_CERTIFICATION_LOGO_TOKENS
+  if (descriptor.jsonPath === 'data.educationLogos') {
+    return getSignatureEducationLogoTokens(asString(template.id, 'unb'))
+  }
+  return null
+}
+
+const normalizeAssetListForDescriptor = (template, descriptor, value) => {
+  const tokens = toAssetTokenList(value, 'logos')
+  const allowedTokens = getAllowedSignatureLogoTokensForField(template, descriptor)
+  return allowedTokens ? tokens.filter((token) => allowedTokens.has(token)) : tokens
+}
+
+const assertAssetListTokenAllowed = (template, descriptor, token) => {
+  const allowedTokens = getAllowedSignatureLogoTokensForField(template, descriptor)
+  if (allowedTokens && !allowedTokens.has(token)) {
+    throw new HttpError(422, `Logo is not allowed for ${descriptor.fieldId}: ${token}`)
+  }
+}
+
 const toLogoAssets = (tokens) =>
   tokens.map((token) => ({
     src: token,
@@ -357,11 +427,34 @@ const resolvePathValueOrFallback = (root, path, fallback) => {
   }
 }
 
-const setPathValue = (root, path, nextValue) => {
-  const { parent, key } = resolvePathContext(root, path)
-  if (parent === null || key === null) {
+const resolveWritablePathContext = (root, path) => {
+  const segments = path.split('.').filter(Boolean)
+  if (segments.length === 0) {
     throw new HttpError(422, `Unable to set path: ${path}`)
   }
+
+  const parentPath = segments.slice(0, -1).join('.')
+  const parent = parentPath ? resolvePathValue(root, parentPath) : root
+  const finalSegment = segments[segments.length - 1]
+
+  if (Array.isArray(parent)) {
+    const index = parent.findIndex((item) => isRecord(item) && asString(item.id) === finalSegment)
+    if (index === -1) {
+      throw new HttpError(422, `Unable to resolve path segment: ${finalSegment}`)
+    }
+
+    return { parent, key: index }
+  }
+
+  if (!isRecord(parent)) {
+    throw new HttpError(422, `Unable to resolve writable parent path: ${path}`)
+  }
+
+  return { parent, key: finalSegment }
+}
+
+const setPathValue = (root, path, nextValue) => {
+  const { parent, key } = resolveWritablePathContext(root, path)
   parent[key] = nextValue
 }
 
@@ -523,6 +616,8 @@ const buildResumeContext = (template) => {
       groups: experienceGroups.map((group) => ({
         id: asString(group.id),
         title: asString(group.title),
+        layout: normalizeLayout(group.layout),
+        columns: clampEntryGroupColumns(group.columns),
         items: asArray(group.items).map((entry) => ({
           id: asString(entry.id),
           role: asString(entry.role),
@@ -539,6 +634,7 @@ const buildResumeContext = (template) => {
       areas: certificationAreas.map((area) => ({
         id: asString(area.id),
         title: asString(area.title),
+        column: normalizeColumn(area.column),
         caption: asString(area.caption),
         summaryValue: asString(area.summaryValue),
         summaryLogos: toAssetTokenList(area.summaryLogos, 'logos'),
@@ -549,12 +645,15 @@ const buildResumeContext = (template) => {
           year: asString(entry.year),
           detail: asString(entry.detail),
           logoSrc: normalizeAssetToken(entry.logoSrc),
+          emphasis: Boolean(entry.emphasis),
         })),
       })),
     },
     leadership: leadershipGroups.map((group) => ({
       id: asString(group.id),
       title: asString(group.title),
+      layout: normalizeLayout(group.layout),
+      columns: clampEntryGroupColumns(group.columns),
       items: asArray(group.items).map((entry) => ({
         id: asString(entry.id),
         role: asString(entry.role),
@@ -605,7 +704,8 @@ const buildResumeContext = (template) => {
   for (const group of snapshot.experience.groups) {
     fields.push(
       buildFieldDescriptor({ documentType: 'resume', sectionId: 'additional-experience', templateGroup: 'experienceGroup', key: 'title', jsonPath: `data.experience.groups.${group.id}.title`, currentValue: group.title }),
-      buildFieldDescriptor({ documentType: 'resume', sectionId: 'additional-experience', templateGroup: 'experienceGroup', key: 'layout', jsonPath: `data.experience.groups.${group.id}.layout`, currentValue: asString(resolvePathValueOrFallback(template, `data.experience.groups.${group.id}.layout`, 'stack'), 'stack') }),
+      buildFieldDescriptor({ documentType: 'resume', sectionId: 'additional-experience', templateGroup: 'experienceGroup', key: 'layout', jsonPath: `data.experience.groups.${group.id}.layout`, currentValue: group.layout }),
+      buildFieldDescriptor({ documentType: 'resume', sectionId: 'additional-experience', templateGroup: 'experienceGroup', key: 'columns', jsonPath: `data.experience.groups.${group.id}.columns`, currentValue: clampEntryGroupColumns(resolvePathValueOrFallback(template, `data.experience.groups.${group.id}.columns`, group.columns)) }),
     )
 
     for (const entry of group.items) {
@@ -624,7 +724,7 @@ const buildResumeContext = (template) => {
   for (const area of snapshot.certifications.areas) {
     fields.push(
       buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationArea', key: 'title', jsonPath: `data.certifications.areas.${area.id}.title`, currentValue: area.title }),
-      buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationArea', key: 'column', jsonPath: `data.certifications.areas.${area.id}.column`, currentValue: asString(resolvePathValueOrFallback(template, `data.certifications.areas.${area.id}.column`, 'left'), 'left') }),
+      buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationArea', key: 'column', jsonPath: `data.certifications.areas.${area.id}.column`, currentValue: area.column }),
       buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationArea', key: 'caption', jsonPath: `data.certifications.areas.${area.id}.caption`, currentValue: area.caption }),
       buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationArea', key: 'summaryValue', jsonPath: `data.certifications.areas.${area.id}.summaryValue`, currentValue: area.summaryValue }),
       buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationArea', key: 'summaryLogos', jsonPath: `data.certifications.areas.${area.id}.summaryLogos`, currentValue: area.summaryLogos }),
@@ -637,6 +737,7 @@ const buildResumeContext = (template) => {
         buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationItem', key: 'year', jsonPath: `data.certifications.areas.${area.id}.items.${entry.id}.year`, currentValue: entry.year }),
         buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationItem', key: 'detail', jsonPath: `data.certifications.areas.${area.id}.items.${entry.id}.detail`, currentValue: entry.detail }),
         buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationItem', key: 'logoSrc', jsonPath: `data.certifications.areas.${area.id}.items.${entry.id}.logoSrc`, currentValue: entry.logoSrc }),
+        buildFieldDescriptor({ documentType: 'resume', sectionId: 'grouped-certifications', templateGroup: 'certificationItem', key: 'emphasis', jsonPath: `data.certifications.areas.${area.id}.items.${entry.id}.emphasis`, currentValue: entry.emphasis }),
       )
     }
   }
@@ -644,7 +745,8 @@ const buildResumeContext = (template) => {
   for (const group of snapshot.leadership) {
     fields.push(
       buildFieldDescriptor({ documentType: 'resume', sectionId: 'community', templateGroup: 'leadershipGroup', key: 'title', jsonPath: `data.leadership.${group.id}.title`, currentValue: group.title }),
-      buildFieldDescriptor({ documentType: 'resume', sectionId: 'community', templateGroup: 'leadershipGroup', key: 'layout', jsonPath: `data.leadership.${group.id}.layout`, currentValue: asString(resolvePathValueOrFallback(template, `data.leadership.${group.id}.layout`, 'stack'), 'stack') }),
+      buildFieldDescriptor({ documentType: 'resume', sectionId: 'community', templateGroup: 'leadershipGroup', key: 'layout', jsonPath: `data.leadership.${group.id}.layout`, currentValue: group.layout }),
+      buildFieldDescriptor({ documentType: 'resume', sectionId: 'community', templateGroup: 'leadershipGroup', key: 'columns', jsonPath: `data.leadership.${group.id}.columns`, currentValue: clampEntryGroupColumns(resolvePathValueOrFallback(template, `data.leadership.${group.id}.columns`, group.columns)) }),
     )
 
     for (const entry of group.items) {
@@ -681,12 +783,30 @@ const buildResumeContext = (template) => {
     }),
     buildCollectionDescriptor({
       documentType: 'resume',
+      sectionId: 'additional-experience',
+      sectionLabel: getSectionMeta('resume', 'additional-experience').label,
+      collectionId: 'data.experience.groups',
+      entryType: 'experienceGroup',
+      allowedOps: ['createEntry', 'deleteEntry'],
+      itemIds: snapshot.experience.groups.map((entry) => entry.id),
+    }),
+    buildCollectionDescriptor({
+      documentType: 'resume',
       sectionId: 'grouped-certifications',
       sectionLabel: getSectionMeta('resume', 'grouped-certifications').label,
       collectionId: 'data.certifications.areas',
       entryType: 'certificationArea',
       allowedOps: ['createEntry', 'deleteEntry'],
       itemIds: snapshot.certifications.areas.map((entry) => entry.id),
+    }),
+    buildCollectionDescriptor({
+      documentType: 'resume',
+      sectionId: 'community',
+      sectionLabel: getSectionMeta('resume', 'community').label,
+      collectionId: 'data.leadership',
+      entryType: 'leadershipGroup',
+      allowedOps: ['createEntry', 'deleteEntry'],
+      itemIds: snapshot.leadership.map((entry) => entry.id),
     }),
   ]
 
@@ -767,6 +887,7 @@ const buildCoverLetterContext = (template) => {
       bodyParagraph2: asString(data.bodyParagraph2),
       bodyParagraph3: asString(data.bodyParagraph3),
       closingParagraph: asString(data.closingParagraph),
+      signoffLabel: asString(data.signoffLabel),
     },
   }
 
@@ -791,6 +912,7 @@ const buildCoverLetterContext = (template) => {
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'body', templateGroup: 'body', key: 'bodyParagraph2', jsonPath: 'data.bodyParagraph2', currentValue: snapshot.data.bodyParagraph2 }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'body', templateGroup: 'body', key: 'bodyParagraph3', jsonPath: 'data.bodyParagraph3', currentValue: snapshot.data.bodyParagraph3 }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'body', templateGroup: 'body', key: 'closingParagraph', jsonPath: 'data.closingParagraph', currentValue: snapshot.data.closingParagraph }),
+    buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'body', templateGroup: 'body', key: 'signoffLabel', jsonPath: 'data.signoffLabel', currentValue: snapshot.data.signoffLabel }),
   ]
 
   return {
@@ -802,26 +924,36 @@ const buildCoverLetterContext = (template) => {
 
 const buildSignatureContext = (template) => {
   const data = isRecord(template.data) ? template.data : {}
+  const templateId = asString(template.id, 'unb')
   const snapshot = {
     data: {
       name: asString(data.name),
-      role: asString(data.role),
-      organization: asString(data.organization),
+      affiliationLines: normalizeSignatureAffiliationLines(data),
       signoff: asString(data.signoff),
       email: asString(data.email),
       website: asString(data.website),
       phone: asString(data.phone),
       location: asString(data.location),
       profileSrc: normalizeAssetToken(data.profileSrc),
-      experienceLogos: toAssetTokenList(data.experienceLogos ?? data.logos, 'logos'),
-      educationLogos: toAssetTokenList(data.educationLogos, 'logos'),
+      experienceLogos: normalizeSignatureLogoTokens(
+        data.experienceLogos ?? data.logos,
+        SIGNATURE_EXPERIENCE_LOGO_TOKENS,
+      ),
+      educationLogos: normalizeSignatureLogoTokens(
+        data.educationLogos,
+        getSignatureEducationLogoTokens(templateId),
+      ),
+      certificationLogos: normalizeSignatureLogoTokens(
+        data.certificationLogos,
+        SIGNATURE_CERTIFICATION_LOGO_TOKENS,
+      ),
+      logoTone: normalizeLogoTone(data.logoTone),
     },
   }
 
   const fields = [
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'name', jsonPath: 'data.name', currentValue: snapshot.data.name }),
-    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'role', jsonPath: 'data.role', currentValue: snapshot.data.role }),
-    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'organization', jsonPath: 'data.organization', currentValue: snapshot.data.organization }),
+    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'affiliationLines', jsonPath: 'data.affiliationLines', currentValue: snapshot.data.affiliationLines }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'signoff', jsonPath: 'data.signoff', currentValue: snapshot.data.signoff }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'email', jsonPath: 'data.email', currentValue: snapshot.data.email }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'website', jsonPath: 'data.website', currentValue: snapshot.data.website }),
@@ -830,7 +962,8 @@ const buildSignatureContext = (template) => {
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'profileSrc', jsonPath: 'data.profileSrc', currentValue: snapshot.data.profileSrc }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'experienceLogos', jsonPath: 'data.experienceLogos', currentValue: snapshot.data.experienceLogos }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'educationLogos', jsonPath: 'data.educationLogos', currentValue: snapshot.data.educationLogos }),
-    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'logoTone', jsonPath: 'data.logoTone', currentValue: asString(data.logoTone, 'monochrome') }),
+    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'certificationLogos', jsonPath: 'data.certificationLogos', currentValue: snapshot.data.certificationLogos }),
+    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'logoTone', jsonPath: 'data.logoTone', currentValue: snapshot.data.logoTone }),
   ]
 
   return {
@@ -889,15 +1022,25 @@ const sanitizeEntryValue = (entryType, value, template) => {
         logoAlt: assetLabelMap.get(logoSrc) ?? logoSrc,
       }
     }
+    case 'experienceGroup': {
+      return {
+        id: sanitizeString(payload.id, `experience-group-${randomUUID()}`),
+        title: sanitizeString(payload.title, 'Experience group'),
+        layout: normalizeLayout(payload.layout),
+        columns: clampEntryGroupColumns(payload.columns),
+        items: asArray(payload.items).map((item) => sanitizeEntryValue('experienceEntry', item, template)),
+      }
+    }
     case 'certificationArea': {
       const areas = asArray(template.data?.certifications?.areas)
       const leftCount = areas.filter((area) => asString(area.column, 'left') === 'left').length
       const rightCount = areas.length - leftCount
+      const payloadColumn = normalizeColumn(payload.column)
       return {
         id: sanitizeString(payload.id, `cert-area-${randomUUID()}`),
         title: sanitizeString(payload.title, 'Certification Area'),
         caption: sanitizeString(payload.caption, 'Editorial caption'),
-        column: leftCount <= rightCount ? 'left' : 'right',
+        column: payload.column ? payloadColumn : leftCount <= rightCount ? 'left' : 'right',
         items: [],
         summaryValue: sanitizeString(payload.summaryValue),
         summaryLogos: toLogoAssets(toAssetTokenList(payload.summaryLogos, 'logos')),
@@ -913,6 +1056,7 @@ const sanitizeEntryValue = (entryType, value, template) => {
         logoSrc,
         logoAlt: assetLabelMap.get(logoSrc) ?? logoSrc,
         detail: sanitizeString(payload.detail),
+        emphasis: typeof payload.emphasis === 'boolean' ? payload.emphasis : false,
       }
     }
     case 'leadershipItem': {
@@ -929,15 +1073,31 @@ const sanitizeEntryValue = (entryType, value, template) => {
         logoAlt: assetLabelMap.get(logoSrc) ?? logoSrc,
       }
     }
+    case 'leadershipGroup': {
+      return {
+        id: sanitizeString(payload.id, `community-group-${randomUUID()}`),
+        title: sanitizeString(payload.title, 'Community group'),
+        layout: normalizeLayout(payload.layout),
+        columns: clampEntryGroupColumns(payload.columns),
+        items: asArray(payload.items).map((item) => sanitizeEntryValue('leadershipItem', item, template)),
+      }
+    }
     default:
       throw new HttpError(422, `Unsupported entry type: ${entryType}`)
   }
 }
 
-const getEntrySnapshotFromCollection = (context, collectionId, entryId) => {
-  const collection = resolvePathValue(context.snapshot, collectionId)
+const getEntrySnapshotFromCollection = (template, collectionId, entryId) => {
+  const collection = resolvePathValue(template, collectionId)
   if (!Array.isArray(collection)) return null
   return collection.find((entry) => isRecord(entry) && asString(entry.id) === entryId) ?? null
+}
+
+const sanitizeMetadataValue = (descriptor, value) => {
+  if (descriptor.jsonPath.endsWith('.layout')) return normalizeLayout(value)
+  if (descriptor.jsonPath.endsWith('.column')) return normalizeColumn(value)
+  if (descriptor.jsonPath === 'data.logoTone') return normalizeLogoTone(value)
+  return asString(value)
 }
 
 const applyReplaceField = (template, descriptor, value) => {
@@ -966,7 +1126,7 @@ const applyReplaceField = (template, descriptor, value) => {
       return
     }
     case 'assetList': {
-      const tokens = toAssetTokenList(value, 'logos')
+      const tokens = normalizeAssetListForDescriptor(template, descriptor, value)
       setPathValue(template, descriptor.jsonPath, toLogoAssets(tokens))
       return
     }
@@ -975,6 +1135,15 @@ const applyReplaceField = (template, descriptor, value) => {
         throw new HttpError(422, `Expected an array for ${descriptor.fieldId}`)
       }
       setPathValue(template, descriptor.jsonPath, toStringArray(value))
+      return
+    case 'boolean':
+      setPathValue(template, descriptor.jsonPath, Boolean(value))
+      return
+    case 'number':
+      setPathValue(template, descriptor.jsonPath, clampEntryGroupColumns(value))
+      return
+    case 'metadata':
+      setPathValue(template, descriptor.jsonPath, sanitizeMetadataValue(descriptor, value))
       return
     default:
       throw new HttpError(422, `Unsupported replaceField target: ${descriptor.fieldId}`)
@@ -1002,6 +1171,7 @@ const applyAddListItem = (template, descriptor, value) => {
 
   if (descriptor.valueType === 'assetList') {
     const token = ensureAssetToken(value, 'logos')
+    assertAssetListTokenAllowed(template, descriptor, token)
     if (!current.some((entry) => isRecord(entry) && normalizeAssetToken(entry.src) === token)) {
       current.push({ src: token, alt: assetLabelMap.get(token) ?? token })
     }
@@ -1156,7 +1326,7 @@ const applyOperationsToTemplate = (documentType, template, operations) => {
           fieldLabel: collection.sectionLabel,
           jsonPath: collection.jsonPath,
           before: null,
-          after: clone(getEntrySnapshotFromCollection(context, operation.collectionId, entryId)),
+          after: clone(getEntrySnapshotFromCollection(workingTemplate, operation.collectionId, entryId)),
         })
         fieldsTouched.add(operation.collectionId)
         break
@@ -1166,7 +1336,7 @@ const applyOperationsToTemplate = (documentType, template, operations) => {
         if (!collection) {
           throw new HttpError(422, `Unknown collection: ${operation.collectionId}`)
         }
-        const before = clone(getEntrySnapshotFromCollection(context, operation.collectionId, operation.entryId))
+        const before = clone(getEntrySnapshotFromCollection(workingTemplate, operation.collectionId, operation.entryId))
         applyDeleteEntry(workingTemplate, collection, operation.entryId)
         context = buildDocumentContext(documentType, workingTemplate)
         diff.push({
@@ -1423,18 +1593,31 @@ const getProjectedTemplate = async (event, documentType, templateId, draftId = '
   }
 }
 
-const getSignatureAssetUrl = (origin, token) => {
+const getSignatureAssetUrl = (origin, token, logoTone = 'original') => {
   if (token.startsWith('profile-')) {
     return `${origin}/ai-assets/${token}.png`
   }
-  return `${origin}/ai-assets/logos/${token}.png`
+  const logoPath = logoTone === 'monochrome' ? `logos/mono/${token}.png` : `logos/${token}.png`
+  return `${origin}/ai-assets/${logoPath}`
 }
 
 const buildSignatureExportHtml = (origin, template) => {
   const data = isRecord(template.data) ? template.data : {}
+  const templateId = asString(template.id, 'unb')
   const profileSrc = getSignatureAssetUrl(origin, normalizeAssetToken(data.profileSrc))
-  const experienceLogos = toAssetTokenList(data.experienceLogos ?? data.logos, 'logos')
-  const educationLogos = toAssetTokenList(data.educationLogos, 'logos')
+  const experienceLogos = normalizeSignatureLogoTokens(
+    data.experienceLogos ?? data.logos,
+    SIGNATURE_EXPERIENCE_LOGO_TOKENS,
+  )
+  const educationLogos = normalizeSignatureLogoTokens(
+    data.educationLogos,
+    getSignatureEducationLogoTokens(templateId),
+  )
+  const certificationLogos = normalizeSignatureLogoTokens(
+    data.certificationLogos,
+    SIGNATURE_CERTIFICATION_LOGO_TOKENS,
+  )
+  const logoTone = normalizeLogoTone(data.logoTone)
 
   const contactRows = [
     { value: asString(data.phone), href: `tel:${asString(data.phone).replace(/[^+\d]/gu, '')}` },
@@ -1450,35 +1633,51 @@ const buildSignatureExportHtml = (origin, template) => {
         : escapeHtml(entry.value)
       const separator =
         index < contactRows.length - 1
-          ? `<td style="padding:0 12px 0 0;vertical-align:middle;color:#cbd5e1;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;">|</td>`
+          ? `<td style="padding:0 11px 0 0;vertical-align:middle;color:#cbd5e1;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;">|</td>`
           : ''
 
       return `
-        <td style="padding:0 12px 0 0;vertical-align:middle;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;color:#64748b;white-space:nowrap;">${valueHtml}</td>
+        <td style="padding:0 11px 0 0;vertical-align:middle;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;color:#64748b;white-space:nowrap;">${valueHtml}</td>
         ${separator}
       `
     })
     .join('')
 
-  const logoTokens = [...experienceLogos, ...educationLogos]
-  const renderLogoRail = (tokens) => {
-    if (tokens.length === 0) return ''
-
-    const entries = tokens
+  const renderLogoCells = (tokens) =>
+    tokens
       .map((token, index) => {
         const alt = assetLabelMap.get(token) ?? token
+        const rightPadding = index === tokens.length - 1 ? '0' : '10px'
         return `
-          <td style="padding:0 ${index === tokens.length - 1 ? 0 : 11}px 0 0;vertical-align:middle;"><img src="${getSignatureAssetUrl(origin, token)}" alt="${escapeHtml(alt)}" style="display:block;height:14px;width:auto;max-width:62px;opacity:0.62;border:0;outline:none;text-decoration:none;image-rendering:-webkit-optimize-contrast;" /></td>
+          <td style="padding:0 ${rightPadding} 0 0;vertical-align:middle;"><img src="${escapeHtml(getSignatureAssetUrl(origin, token, logoTone))}" alt="${escapeHtml(alt)}" style="display:block;height:13px;width:auto;max-width:60px;opacity:0.66;border:0;outline:none;text-decoration:none;image-rendering:-webkit-optimize-contrast;" /></td>
         `
       })
       .join('')
 
-    return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr>${entries}</tr></table>`
+  const renderLogoRail = (...tokenGroups) => {
+    const visibleGroups = tokenGroups.filter((tokens) => tokens.length > 0)
+    if (visibleGroups.length === 0) return ''
+
+    const groups = visibleGroups
+      .map((tokens, index) => {
+        const rightPadding = index === visibleGroups.length - 1 ? '0' : '13px'
+
+        return `
+          <td style="padding:0 ${rightPadding} 0 0;vertical-align:middle;">
+            <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
+              <tr>${renderLogoCells(tokens)}</tr>
+            </table>
+          </td>
+        `
+      })
+      .join('')
+
+    return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr>${groups}</tr></table>`
   }
 
-  const logoRailHtml = renderLogoRail(logoTokens)
-  const hasRole = asString(data.role).trim().length > 0
-  const hasOrganization = asString(data.organization).trim().length > 0
+  const logoRailHtml = renderLogoRail(experienceLogos, educationLogos, certificationLogos)
+  const affiliationRows = getSignatureAffiliationDisplayRows(data)
+  const hasAffiliation = affiliationRows.length > 0
 
   return `<!DOCTYPE html>
 <html>
@@ -1491,44 +1690,44 @@ const buildSignatureExportHtml = (origin, template) => {
         <td style="padding:0;background:#ffffff;">
           <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
             <tr>
-              <td style="padding:0 0 10px 0;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.35;font-weight:500;letter-spacing:0;color:#475569;">
+              <td style="padding:0 0 9px 0;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.8px;line-height:1.35;font-weight:500;letter-spacing:0;color:#475569;">
                 ${escapeHtml(asString(data.signoff, 'Best regards,'))}
               </td>
             </tr>
           </table>
           <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
             <tr>
-              <td style="padding:0 14px 0 0;vertical-align:top;">
-                <img src="${profileSrc}" alt="${escapeHtml(asString(data.profileAlt, 'Tyler Bustard portrait'))}" width="56" height="56" style="display:block;width:56px;height:56px;border-radius:999px;border:1px solid #d7dee8;background:#ffffff;object-fit:cover;object-position:center 12%;" />
+              <td style="padding:0 13px 0 0;vertical-align:top;">
+                <img src="${profileSrc}" alt="${escapeHtml(asString(data.profileAlt, 'Tyler Bustard portrait'))}" width="54" height="54" style="display:block;width:54px;height:54px;border-radius:999px;border:1px solid #d7dee8;background:#ffffff;object-fit:cover;object-position:center 12%;" />
               </td>
               <td style="padding:0;vertical-align:top;">
                 <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
                   <tr>
-                    <td style="padding:0;font-family:'Aptos Display','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:22px;line-height:1.08;font-weight:700;letter-spacing:0;color:#0f172a;">
+                    <td style="padding:0;font-family:'Aptos Display','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:24px;line-height:1.05;font-weight:700;letter-spacing:0;color:#0f172a;">
                       ${escapeHtml(asString(data.name))}
                     </td>
                   </tr>
                   ${
-                    hasRole
-                      ? `<tr><td style="height:4px;font-size:1px;line-height:1px;">&nbsp;</td></tr><tr><td style="padding:0;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.35;font-weight:600;letter-spacing:0;color:#334155;">${escapeHtml(asString(data.role))}</td></tr>`
-                      : ''
-                  }
-                  ${
-                    hasOrganization
-                      ? `<tr><td style="height:${hasRole ? 3 : 4}px;font-size:1px;line-height:1px;">&nbsp;</td></tr><tr><td style="padding:1px 0 0 0;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;letter-spacing:0;color:#64748b;">${escapeHtml(asString(data.organization))}</td></tr>`
+                    hasAffiliation
+                      ? `<tr><td style="height:3px;font-size:1px;line-height:1px;">&nbsp;</td></tr>${affiliationRows
+                          .map(
+                            (row, index) =>
+                              `<tr><td style="padding:${index === 0 ? '0' : '1px 0 0 0'};font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.8px;line-height:1.35;font-weight:${index === 0 ? '500' : '600'};letter-spacing:0;color:#334155;">${escapeHtml(row)}</td></tr>`,
+                          )
+                          .join('')}`
                       : ''
                   }
                 </table>
               </td>
             </tr>
           </table>
-          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr><td style="height:10px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr><td style="height:9px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
           <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
             <tr>${contactHtml}</tr>
           </table>
-          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr><td style="height:10px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
-          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:75%;"><tr><td style="height:1px;background:#e5e7eb;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
-          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr><td style="height:10px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr><td style="height:8px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:100%;"><tr><td style="height:1px;background:#e5e7eb;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr><td style="height:9px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
           ${logoRailHtml}
         </td>
       </tr>
@@ -1592,6 +1791,7 @@ const createExportArtifact = async (event, payload) => {
       templateId,
       contentType: 'text/html; charset=utf-8',
       sha256: createHash('sha256').update(html).digest('hex'),
+      integrityScope: 'artifact-body',
       renderMode: 'signature-html',
       body: html,
       fileName: `${sanitizeFileSegment(asString(workingTemplate.label, templateId), templateId)}-${companySegment}-${roleSegment}.html`,
@@ -1606,6 +1806,7 @@ const createExportArtifact = async (event, payload) => {
       contentType: artifact.contentType,
       downloadUrl: `${studioOrigin}${artifactPathPrefix}/${artifactId}`,
       sha256: artifact.sha256,
+      integrityScope: artifact.integrityScope,
       renderMode: artifact.renderMode,
       fileName: artifact.fileName,
       jobMetadata,
@@ -1638,6 +1839,8 @@ const createExportArtifact = async (event, payload) => {
     templateId,
     contentType: 'application/pdf',
     sha256: effectiveHash,
+    sourceSha256: effectiveHash,
+    integrityScope: 'source-template',
     renderMode: 'dynamic-print-route',
     redirectUrl: printUrl,
     fileName,
@@ -1654,6 +1857,8 @@ const createExportArtifact = async (event, payload) => {
     contentType: artifact.contentType,
     downloadUrl: `${studioOrigin}${artifactPathPrefix}/${artifactId}`,
     sha256: artifact.sha256,
+    sourceSha256: artifact.sourceSha256,
+    integrityScope: artifact.integrityScope,
     renderMode: artifact.renderMode,
     fileName,
     printUrl,

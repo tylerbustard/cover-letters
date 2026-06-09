@@ -10,16 +10,16 @@ import type {
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 export const getDefaultResumeState = (): StoredResumeState => ({
-  selectedId: RESUME_TEMPLATES[0].id,
+  selectedId: RESUME_TEMPLATES.find((template) => template.id === 'queens')?.id ?? RESUME_TEMPLATES[0].id,
   templates: clone(RESUME_TEMPLATES),
 })
 
 export const getDefaultCoverLetterState = (): StoredCoverLetterState => ({
-  selectedId: COVER_LETTER_TEMPLATES.find((template) => template.id === 'unb')?.id ?? COVER_LETTER_TEMPLATES[0].id,
+  selectedId: COVER_LETTER_TEMPLATES.find((template) => template.id === 'queens')?.id ?? COVER_LETTER_TEMPLATES[0].id,
   templates: clone(COVER_LETTER_TEMPLATES),
 })
 
 export const getDefaultSignatureState = (): StoredSignatureState => ({
-  selectedId: SIGNATURE_TEMPLATES[0].id,
+  selectedId: SIGNATURE_TEMPLATES.find((template) => template.id === 'queens')?.id ?? SIGNATURE_TEMPLATES[0].id,
   templates: clone(SIGNATURE_TEMPLATES),
 })

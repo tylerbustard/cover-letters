@@ -8,6 +8,7 @@ export interface VariationConfig {
   label: string
   description: string
   contextLabel: string
+  titleLabel: string
   defaults: Pick<
     CoverLetterData,
     'yourName' | 'yourEmail' | 'yourPhone' | 'yourWebsite' | 'yourAddress'
@@ -23,7 +24,8 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     id: 'queens',
     label: "Queen's University",
     description: "Queen's University styling preset",
-    contextLabel: "Queen's University",
+    contextLabel: "Queen's University · Smith School of Business",
+    titleLabel: 'Master of Finance Candidate, 2026-2027',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,
@@ -40,7 +42,8 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     id: 'unb',
     label: 'University of New Brunswick',
     description: 'UNB finance and technology preset',
-    contextLabel: 'University of New Brunswick · Finance',
+    contextLabel: 'University of New Brunswick · Bachelor of Business Administration in Finance; Class of 2020',
+    titleLabel: 'Finance & Technology',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,
@@ -58,6 +61,7 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     label: 'University of Toronto',
     description: 'Rotman School of Management preset',
     contextLabel: 'University of Toronto · Rotman School of Management',
+    titleLabel: 'Finance & Technology',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,
@@ -75,6 +79,7 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     label: 'McGill University',
     description: 'McGill Desautels preset',
     contextLabel: 'McGill University · Desautels Faculty of Management',
+    titleLabel: 'Finance & Technology',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,

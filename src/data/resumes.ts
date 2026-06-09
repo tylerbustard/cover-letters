@@ -41,6 +41,20 @@ const createUnbEducation = () => ({
   logoAlt: 'University of New Brunswick',
 })
 
+const createQueensEducation = () => ({
+  id: 'education-queens-mfin',
+  degree: 'Master of Finance Candidate',
+  program: 'Smith School of Business',
+  school: "Queen's University",
+  date: '2026-2027',
+  bullets: [
+    'Graduate finance candidacy aligned with investment analysis, capital markets, risk, and portfolio decision-making',
+    'Professional focus on Canadian finance, banking, and investment operations',
+  ],
+  logoSrc: assets.logoQueensAlt,
+  logoAlt: "Queen's University",
+})
+
 export const createNccEducation = () => ({
   id: 'education-northeast-christian-college',
   degree: 'Theology Program',
@@ -143,21 +157,6 @@ const createRbcInternExperience = (): ResumeExperienceItem => ({
   skills: ['Client Service', 'Digital Banking', 'Problem Resolution', 'Customer Support'],
   logoSrc: assets.logoRbc,
   logoAlt: 'Royal Bank of Canada',
-})
-
-const createIrvingExperience = (): ResumeExperienceItem => ({
-  id: 'experience-irving',
-  role: 'Marketing Intern',
-  company: 'Irving Oil Limited',
-  location: 'Saint John, NB',
-  date: '2018',
-  bullets: [
-    'Conducted competitor analysis driving insights that improved targeted marketing by 11%',
-    'Developed a Customer Lifecycle model that increased targeted promotions, boosting customer engagement by 8%',
-  ],
-  skills: ['Market Research', 'Customer Analytics', 'Competitive Analysis', 'Marketing Strategy'],
-  logoSrc: assets.logoIrving,
-  logoAlt: 'Irving Oil',
 })
 
 const createGrantExperience = (): ResumeExperienceItem => ({
@@ -280,14 +279,6 @@ const createCertificationAreas = (): ResumeCertificationArea[] => [
         logoAlt: 'Coursera',
       },
       {
-        id: 'cert-tableau',
-        name: 'Data Visualization with Tableau',
-        issuer: 'UC Davis',
-        year: '2023',
-        logoSrc: assets.logoCoursera,
-        logoAlt: 'Coursera',
-      },
-      {
         id: 'cert-python',
         name: 'Python for Everybody Specialization',
         issuer: 'University of Michigan',
@@ -299,14 +290,6 @@ const createCertificationAreas = (): ResumeCertificationArea[] => [
         id: 'cert-sql',
         name: 'SQL for Data Science',
         issuer: 'UC Davis',
-        year: '2020',
-        logoSrc: assets.logoCoursera,
-        logoAlt: 'Coursera',
-      },
-      {
-        id: 'cert-power-bi',
-        name: 'Power BI Data Visualization',
-        issuer: 'Microsoft',
         year: '2020',
         logoSrc: assets.logoCoursera,
         logoAlt: 'Coursera',
@@ -332,38 +315,6 @@ const createCertificationAreas = (): ResumeCertificationArea[] => [
         name: 'Econometrics: Methods & Applications',
         issuer: 'Erasmus University',
         year: '2024',
-        logoSrc: assets.logoCoursera,
-        logoAlt: 'Coursera',
-      },
-      {
-        id: 'cert-matrix-algebra',
-        name: 'Matrix Algebra for Engineers',
-        issuer: 'HKUST',
-        year: '2024',
-        logoSrc: assets.logoCoursera,
-        logoAlt: 'Coursera',
-      },
-      {
-        id: 'cert-calculus',
-        name: 'Introduction to Calculus',
-        issuer: 'University of Sydney',
-        year: '2023',
-        logoSrc: assets.logoCoursera,
-        logoAlt: 'Coursera',
-      },
-      {
-        id: 'cert-inferential-stats',
-        name: 'Inferential Statistics',
-        issuer: 'Duke University',
-        year: '2020',
-        logoSrc: assets.logoCoursera,
-        logoAlt: 'Coursera',
-      },
-      {
-        id: 'cert-excel',
-        name: 'Excel Skills for Business',
-        issuer: 'Macquarie University',
-        year: '2020',
         logoSrc: assets.logoCoursera,
         logoAlt: 'Coursera',
       },
@@ -402,7 +353,6 @@ const createLeadershipGroups = (): ResumeLeadershipGroup[] => [
         date: '2020-Present',
         bullets: [
           'Led implementation of fundraising strategies achieving 20% increase in funds raised over three years',
-          'Spearheaded engagement initiatives resulting in 15% rise in participation and awareness within workplace community',
         ],
         skills: ['Fundraising', 'Community Engagement', 'Event Planning'],
         logoSrc: assets.logoUnitedWay,
@@ -416,7 +366,6 @@ const createLeadershipGroups = (): ResumeLeadershipGroup[] => [
         date: '2019-2020',
         bullets: [
           'Organized and executed campus-wide events resulting in 25% increase in student engagement and awareness',
-          'Developed targeted outreach strategy achieving 30% increase in student participation in RBC-sponsored events',
         ],
         skills: ['Campus Outreach', 'Event Coordination', 'Brand Representation'],
         logoSrc: assets.logoRbc,
@@ -430,7 +379,6 @@ const createLeadershipGroups = (): ResumeLeadershipGroup[] => [
         date: '2018',
         bullets: [
           'Successfully organized and executed engaging activities for over 100 children ensuring safe and enjoyable experience',
-          'Demonstrated leadership through collaboration with fellow volunteers for well-coordinated event execution',
         ],
         skills: ['Volunteer Leadership', 'Event Support', 'Teamwork'],
         logoSrc: assets.logoIrving,
@@ -458,7 +406,7 @@ const buildExperienceGroups = (hasFiscal: boolean, bmoDate: string) => {
       id: 'experience-co-op',
       title: 'Co-op Experience',
       layout: 'stack',
-      items: [createRbcInternExperience(), createIrvingExperience(), createGrantExperience()],
+      items: [createRbcInternExperience(), createGrantExperience()],
     },
   ]
 
@@ -481,12 +429,12 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
   {
     id: 'queens',
     label: "Queen's Resume",
-    description: "UNB-only education (Queen's M.Fin entry removed 2026-05-20).",
+    description: "Queen's MFin 2026-2027 package aligned to TylerBustard.com.",
     data: {
       header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
       education: [
+        createQueensEducation(),
         createUnbEducation(),
-        createNccEducation(),
       ],
       experience: buildExperienceGroups(true, '2022-2023'),
       certifications: { areas: clone(createCertificationAreas()) },

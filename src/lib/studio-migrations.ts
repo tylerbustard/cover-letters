@@ -1,5 +1,12 @@
 import { getDefaultCoverLetterState, getDefaultResumeState, getDefaultSignatureState } from '@/lib/studio-defaults'
 import { resolveStudioAssetSrc } from '@/data/assets'
+import {
+  SIGNATURE_CERTIFICATION_LOGO_VALUES,
+  SIGNATURE_EXPERIENCE_LOGO_VALUES,
+  getSignatureEducationLogoValues,
+  normalizeSignatureLogos,
+} from '@/lib/signature-logo-groups'
+import { normalizeSignatureAffiliationLines } from '@/lib/signature-identity'
 import type {
   CoverLetterConfig,
   CoverLetterTemplate,
@@ -84,6 +91,30 @@ const asLogoAssetArray = (value: unknown): LogoAsset[] =>
 const LEGACY_SIGNATURE_ROLE = 'Finance & Technology Professional'
 const CURRENT_SIGNATURE_ROLE = 'Finance & Technology'
 const RESETTABLE_SIGNATURE_ROLES = new Set([LEGACY_SIGNATURE_ROLE, CURRENT_SIGNATURE_ROLE])
+const RESETTABLE_SIGNATURE_AFFILIATIONS: Partial<
+  Record<EmailSignatureTemplate['id'], { roles: Set<string>; organizations: Set<string> }>
+> = {
+  unb: {
+    roles: new Set(['']),
+    organizations: new Set(['University of New Brunswick']),
+  },
+  mcgill: {
+    roles: new Set([]),
+    organizations: new Set(['McGill University']),
+  },
+  queens: {
+    roles: new Set(['']),
+    organizations: new Set([
+      "Queen's University",
+      "Queen's University; Smith School of Business",
+      "Queen's University · Smith School of Business",
+    ]),
+  },
+  rotman: {
+    roles: new Set([]),
+    organizations: new Set(['Rotman School of Management']),
+  },
+}
 
 const LEGACY_SIGNATURE_LOGO_ALTS: Record<EmailSignatureTemplate['id'], string[][]> = {
   unb: [
@@ -193,10 +224,19 @@ const matchesLegacySignatureLogos = (
   })
 }
 
-const QUEENS_EDUCATION_YEAR = '2027'
+const QUEENS_EDUCATION_YEAR = '2026-2027'
 
-const isQueensLegacyIdentity = (value: string) =>
-  value.includes('tylerbustard.net') || value.includes('tylerbustard.ca')
+const hasLegacyTylerContactIdentity = (value: string) =>
+  /tylerbustard\.(?:ca|net)\b/iu.test(value)
+
+const normalizeTylerContactIdentity = (value: unknown, fallback: string) => {
+  const rawValue = asString(value, fallback)
+  if (!hasLegacyTylerContactIdentity(rawValue)) return rawValue || fallback
+
+  return rawValue
+    .replace(/tyler@tylerbustard\.(?:ca|net)\b/giu, 'tyler@tylerbustard.com')
+    .replace(/tylerbustard\.(?:ca|net)\b/giu, 'tylerbustard.com')
+}
 
 const normalizeQueensEducationDate = <
   T extends {
@@ -210,12 +250,16 @@ const normalizeQueensEducationDate = <
 ) =>
   templateId === 'queens'
     ? education.map((item) => {
-        const isQueensEntry = item.id === 'education-queens' || item.school === "Queen's University"
+        const isQueensEntry =
+          item.id === 'education-queens' ||
+          item.id === 'education-queens-mfin' ||
+          item.school === "Queen's University"
         if (!isQueensEntry) return item
+        if (item.date === '2026-2027') return item
         if (
-          item.date === '2026-2027' ||
           item.date === '2026 - 2027' ||
           item.date === '2026' ||
+          item.date === '2027' ||
           item.date === '2027-2026' ||
           item.date === '2027 - 2026'
         ) {
@@ -259,16 +303,18 @@ const migrateResumeExperienceGroup = (
     .map((item, index) => migrateResumeExperienceItem(item, fallback?.items[index]))
     .filter((item): item is ResumeExperienceItem => Boolean(item))
 
+  const rawColumns =
+    typeof value.columns === 'number'
+      ? value.columns
+      : typeof fallback?.columns === 'number'
+        ? fallback.columns
+        : undefined
+
   return {
     id: asString(value.id, fallback?.id ?? `experience-group-${Date.now()}`),
     title: asString(value.title, fallback?.title ?? ''),
     layout: value.layout === 'grid' ? 'grid' : 'stack',
-    columns:
-      typeof value.columns === 'number'
-        ? value.columns
-        : typeof fallback?.columns === 'number'
-          ? fallback.columns
-          : undefined,
+    columns: typeof rawColumns === 'number' ? Math.min(3, Math.max(1, Math.round(rawColumns))) : undefined,
     items,
   }
 }
@@ -393,16 +439,18 @@ const migrateLeadershipGroup = (
     .map((item, index) => migrateLeadershipItem(item, fallback?.items[index]))
     .filter((item): item is ResumeLeadershipItem => Boolean(item))
 
+  const rawColumns =
+    typeof value.columns === 'number'
+      ? value.columns
+      : typeof fallback?.columns === 'number'
+        ? fallback.columns
+        : undefined
+
   return {
     id: asString(value.id, fallback?.id ?? `community-group-${Date.now()}`),
     title: asString(value.title, fallback?.title ?? ''),
     layout: value.layout === 'grid' ? 'grid' : 'stack',
-    columns:
-      typeof value.columns === 'number'
-        ? value.columns
-        : typeof fallback?.columns === 'number'
-          ? fallback.columns
-          : undefined,
+    columns: typeof rawColumns === 'number' ? Math.min(3, Math.max(1, Math.round(rawColumns))) : undefined,
     items,
   }
 }
@@ -506,6 +554,68 @@ const hasCoverLetterAssetDrift = (value: unknown) => {
   )
 }
 
+const RESETTABLE_COVER_LETTER_TAGLINES = new Set([
+  '',
+  'Finance & Technology',
+  'Finance & Technology Professional',
+  'Finance Graduate · 2020',
+  'Master of Finance Candidate, 2026-2027',
+  'Master of Finance Candidate, 2027',
+  'Master of Finance Candidate · 2027',
+  'MBA Candidate · 2026',
+  'Master of Management in Finance Candidate · 2027',
+  "Queen's University",
+  "Queen's University · Smith School of Business",
+  'University of New Brunswick · Finance',
+  'University of Toronto · Rotman School of Management',
+  'McGill University · Desautels Faculty of Management',
+])
+
+const RESETTABLE_COVER_LETTER_CONTEXT_NOTES = new Set([
+  '',
+  'UNB context',
+  'University of New Brunswick · Finance',
+])
+
+const normalizeCoverLetterTagline = (value: unknown, fallback: string) => {
+  const tagline = normalizeRoiText(asString(value, fallback))
+  return RESETTABLE_COVER_LETTER_TAGLINES.has(tagline) ? fallback : tagline
+}
+
+const normalizeCoverLetterContextNote = (value: unknown, fallback: string) => {
+  const contextNote = normalizeRoiText(asString(value, fallback))
+  return RESETTABLE_COVER_LETTER_CONTEXT_NOTES.has(contextNote) ? fallback : contextNote
+}
+
+const hasCoverLetterTaglineDrift = (value: unknown) =>
+  isRecord(value) &&
+  isRecord(value.config) &&
+  (!('tagline' in value.config) || RESETTABLE_COVER_LETTER_TAGLINES.has(normalizeRoiText(asString(value.config.tagline))))
+
+const hasCoverLetterContextNoteDrift = (value: unknown) =>
+  isRecord(value) &&
+  isRecord(value.config) &&
+  (!('contextNote' in value.config) ||
+    RESETTABLE_COVER_LETTER_CONTEXT_NOTES.has(normalizeRoiText(asString(value.config.contextNote))))
+
+const hasResumeContactIdentityDrift = (value: unknown) => {
+  if (!isRecord(value) || !isRecord(value.data)) return false
+  const header = isRecord(value.data.header) ? value.data.header : {}
+  const contact = isRecord(header.contact) ? header.contact : {}
+  return (
+    hasLegacyTylerContactIdentity(asString(contact.email)) ||
+    hasLegacyTylerContactIdentity(asString(contact.website))
+  )
+}
+
+const hasCoverLetterContactIdentityDrift = (value: unknown) => {
+  if (!isRecord(value) || !isRecord(value.data)) return false
+  return (
+    hasLegacyTylerContactIdentity(asString(value.data.yourEmail)) ||
+    hasLegacyTylerContactIdentity(asString(value.data.yourWebsite))
+  )
+}
+
 const hasLegacyCoverLetterTemplateMarkers = (value: unknown) => {
   if (!isRecord(value) || !isRecord(value.data) || !isRecord(value.config)) return false
 
@@ -534,19 +644,94 @@ const hasSignatureAssetDrift = (value: unknown) => {
   if (!isRecord(value) || !isRecord(value.data)) return false
   const experienceLogos = Array.isArray(value.data.experienceLogos) ? value.data.experienceLogos : []
   const educationLogos = Array.isArray(value.data.educationLogos) ? value.data.educationLogos : []
+  const certificationLogos = Array.isArray(value.data.certificationLogos) ? value.data.certificationLogos : []
   const legacyLogos = Array.isArray(value.data.logos) ? value.data.logos : []
   return (
     hasAssetDrift(asString(value.data.profileSrc)) ||
     experienceLogos.some((logo) => isRecord(logo) && hasAssetDrift(asString(logo.src))) ||
     educationLogos.some((logo) => isRecord(logo) && hasAssetDrift(asString(logo.src))) ||
+    certificationLogos.some((logo) => isRecord(logo) && hasAssetDrift(asString(logo.src))) ||
     legacyLogos.some((logo) => isRecord(logo) && hasAssetDrift(asString(logo.src)))
   )
 }
 
-const hasQueensSignatureIdentityDrift = (value: unknown) => {
-  if (!isRecord(value) || asString(value.id) !== 'queens' || !isRecord(value.data)) return false
-  return isQueensLegacyIdentity(asString(value.data.email)) || isQueensLegacyIdentity(asString(value.data.website))
+const logoAssetArraysMatch = (actual: LogoAsset[], expected: LogoAsset[]) =>
+  actual.length === expected.length &&
+  actual.every((logo, index) => logo.src === expected[index]?.src && logo.alt === expected[index]?.alt)
+
+const stringArraysMatch = (actual: string[], expected: string[]) =>
+  actual.length === expected.length && actual.every((value, index) => value === expected[index])
+
+const hasSignatureLogoGroupDrift = (value: unknown) => {
+  if (!isRecord(value) || !isRecord(value.data)) return false
+
+  const data = value.data
+  const signatureId = (asString(value.id, 'unb') || 'unb') as EmailSignatureTemplate['id']
+  const rawExperienceLogos = asLogoAssetArray(data.experienceLogos)
+  const rawEducationLogos = asLogoAssetArray(data.educationLogos)
+  const rawCertificationLogos = asLogoAssetArray(data.certificationLogos)
+
+  return (
+    !logoAssetArraysMatch(
+      rawExperienceLogos,
+      normalizeSignatureLogos(rawExperienceLogos, SIGNATURE_EXPERIENCE_LOGO_VALUES),
+    ) ||
+    !logoAssetArraysMatch(
+      rawEducationLogos,
+      normalizeSignatureLogos(rawEducationLogos, getSignatureEducationLogoValues(signatureId)),
+    ) ||
+    !logoAssetArraysMatch(
+      rawCertificationLogos,
+      normalizeSignatureLogos(rawCertificationLogos, SIGNATURE_CERTIFICATION_LOGO_VALUES),
+    )
+  )
 }
+
+const hasSignatureContactIdentityDrift = (value: unknown) => {
+  if (!isRecord(value) || !isRecord(value.data)) return false
+  return (
+    hasLegacyTylerContactIdentity(asString(value.data.email)) ||
+    hasLegacyTylerContactIdentity(asString(value.data.website))
+  )
+}
+
+const shouldUseFallbackSignatureRole = (
+  templateId: EmailSignatureTemplate['id'],
+  value: string,
+  fallback: string,
+) => {
+  if (!fallback.trim()) return RESETTABLE_SIGNATURE_ROLES.has(value)
+  return RESETTABLE_SIGNATURE_ROLES.has(value) || RESETTABLE_SIGNATURE_AFFILIATIONS[templateId]?.roles.has(value)
+}
+
+const shouldUseFallbackSignatureOrganization = (
+  templateId: EmailSignatureTemplate['id'],
+  value: string,
+  fallback: string,
+) => {
+  if (!fallback.trim()) return false
+  return RESETTABLE_SIGNATURE_AFFILIATIONS[templateId]?.organizations.has(value) ?? false
+}
+
+const hasSignatureAffiliationDrift = (value: unknown) => {
+  if (!isRecord(value) || !isRecord(value.data)) return false
+  if (!Array.isArray(value.data.affiliationLines)) return true
+
+  const currentLines = normalizeRoiStringArray(asStringArray(value.data.affiliationLines))
+  if (hasLegacyQueensMfinAffiliation(asString(value.id), currentLines)) return true
+
+  const normalizedLines = normalizeRoiStringArray(normalizeSignatureAffiliationLines(value.data))
+  return !stringArraysMatch(currentLines, normalizedLines)
+}
+
+const LEGACY_QUEENS_MFIN_AFFILIATION_LINES = new Set([
+  'Master of Finance Candidate, 2027',
+  'Master of Finance Candidate · 2027',
+  'Master of Finance Candidate, 2026',
+])
+
+const hasLegacyQueensMfinAffiliation = (templateId: string, lines: string[]) =>
+  templateId === 'queens' && lines.some((line) => LEGACY_QUEENS_MFIN_AFFILIATION_LINES.has(line))
 
 const normalizeMcgillEducationDate = <
   T extends {
@@ -585,8 +770,12 @@ const hasQueensEducationDateDrift = (value: unknown) => {
   return education.some(
     (item) =>
       isRecord(item) &&
-      (asString(item.id) === 'education-queens' || asString(item.school) === "Queen's University") &&
-      ['2026-2027', '2026 - 2027', '2026', '2027 - 2026', '2027-2026'].includes(asString(item.date)),
+      (
+        asString(item.id) === 'education-queens' ||
+        asString(item.id) === 'education-queens-mfin' ||
+        asString(item.school) === "Queen's University"
+      ) &&
+      ['2026 - 2027', '2026', '2027', '2027 - 2026', '2027-2026'].includes(asString(item.date)),
   )
 }
 
@@ -672,9 +861,9 @@ const migrateResumeTemplate = (value: unknown, fallback: ResumeTemplate): Resume
         ),
         profileAlt: normalizeRoiText(asString(header.profileAlt, fallback.data.header.profileAlt)),
         contact: {
-          email: asString(headerContact.email, fallback.data.header.contact.email),
+          email: normalizeTylerContactIdentity(headerContact.email, fallback.data.header.contact.email),
           phone: asString(headerContact.phone, fallback.data.header.contact.phone),
-          website: asString(headerContact.website, fallback.data.header.contact.website),
+          website: normalizeTylerContactIdentity(headerContact.website, fallback.data.header.contact.website),
           location: asString(headerContact.location, fallback.data.header.contact.location),
         },
       },
@@ -696,8 +885,11 @@ const migrateCoverLetterConfig = (value: unknown, fallback: CoverLetterConfig): 
 
   return {
     presetLabel: normalizeRoiText(asString(value.presetLabel, asString(value.organization, fallback.presetLabel))),
-    tagline: normalizeRoiText(asString(value.tagline, fallback.tagline)),
-    contextNote: normalizeRoiText(asString(value.contextNote, asString(value.summary, fallback.contextNote))),
+    tagline: normalizeCoverLetterTagline(value.tagline, fallback.tagline),
+    contextNote: normalizeCoverLetterContextNote(
+      'contextNote' in value ? value.contextNote : value.summary,
+      fallback.contextNote,
+    ),
     profileSrc: resolveStudioAssetSrc(asString(value.profileSrc, fallback.profileSrc), fallback.profileSrc),
     profileAlt: normalizeRoiText(asString(value.profileAlt, fallback.profileAlt)),
     signatureSrc: resolveStudioAssetSrc(asString(value.signatureSrc, fallback.signatureSrc), fallback.signatureSrc),
@@ -726,9 +918,9 @@ const migrateCoverLetterTemplate = (value: unknown, fallback: CoverLetterTemplat
       hiringManager: normalizeRoiText(asString(data.hiringManager, fallback.data.hiringManager)),
       date: asString(data.date, fallback.data.date),
       yourName: asString(data.yourName, fallback.data.yourName),
-      yourEmail: asString(data.yourEmail, fallback.data.yourEmail),
+      yourEmail: normalizeTylerContactIdentity(data.yourEmail, fallback.data.yourEmail),
       yourPhone: asString(data.yourPhone, fallback.data.yourPhone),
-      yourWebsite: asString(data.yourWebsite, fallback.data.yourWebsite),
+      yourWebsite: normalizeTylerContactIdentity(data.yourWebsite, fallback.data.yourWebsite),
       yourAddress: normalizeRoiText(asString(data.yourAddress, fallback.data.yourAddress)),
       companyAddress: normalizeRoiText(asString(data.companyAddress, fallback.data.companyAddress)),
       openingParagraph: normalizeRoiText(asString(data.openingParagraph, fallback.data.openingParagraph)),
@@ -736,6 +928,7 @@ const migrateCoverLetterTemplate = (value: unknown, fallback: CoverLetterTemplat
       bodyParagraph2: normalizeRoiText(asString(data.bodyParagraph2, fallback.data.bodyParagraph2)),
       bodyParagraph3: normalizeRoiText(asString(data.bodyParagraph3, fallback.data.bodyParagraph3)),
       closingParagraph: normalizeRoiText(asString(data.closingParagraph, fallback.data.closingParagraph)),
+      signoffLabel: normalizeRoiText(asString(data.signoffLabel, fallback.data.signoffLabel)),
     },
   }
 }
@@ -748,13 +941,61 @@ const migrateSignatureTemplate = (value: unknown, fallback: EmailSignatureTempla
   const data = value.data
   const rawExperienceLogos = asLogoAssetArray(data.experienceLogos)
   const rawEducationLogos = asLogoAssetArray(data.educationLogos)
+  const rawCertificationLogos = asLogoAssetArray(data.certificationLogos)
   const rawLegacyLogos = asLogoAssetArray(data.logos)
   const rawRole = asString(data.role, fallback.data.role)
   const shouldResetLegacyLogos =
     rawLegacyLogos.length === 0 || matchesLegacySignatureLogos(fallback.id, rawLegacyLogos)
-  const isQueensTemplate = fallback.id === 'queens'
   const email = asString(data.email, fallback.data.email)
   const website = asString(data.website, fallback.data.website)
+  const hasExperienceLogos = Array.isArray(data.experienceLogos)
+  const hasEducationLogos = Array.isArray(data.educationLogos)
+  const hasCertificationLogos = Array.isArray(data.certificationLogos)
+  const hasAffiliationLines = Array.isArray(data.affiliationLines)
+  const nextExperienceLogos = hasExperienceLogos
+    ? rawExperienceLogos
+    : rawLegacyLogos.length > 0 && !shouldResetLegacyLogos
+      ? rawLegacyLogos
+      : clone(fallback.data.experienceLogos)
+  const nextEducationLogos = hasEducationLogos ? rawEducationLogos : clone(fallback.data.educationLogos)
+  const nextCertificationLogos = hasCertificationLogos
+    ? rawCertificationLogos
+    : clone(fallback.data.certificationLogos)
+  const shouldUseFallbackRole = shouldUseFallbackSignatureRole(fallback.id, rawRole, fallback.data.role)
+  const shouldUseFallbackOrganization = shouldUseFallbackSignatureOrganization(
+    fallback.id,
+    asString(data.organization, fallback.data.organization ?? ''),
+    fallback.data.organization ?? '',
+  )
+  const shouldUseFallbackAffiliationLineValues =
+    hasAffiliationLines &&
+    hasLegacyQueensMfinAffiliation(
+      fallback.id,
+      normalizeRoiStringArray(asStringArray(data.affiliationLines)),
+    )
+  const shouldUseFallbackAffiliationLines =
+    shouldUseFallbackAffiliationLineValues ||
+    (!hasAffiliationLines && (shouldUseFallbackRole || shouldUseFallbackOrganization))
+  const nextRole = shouldUseFallbackRole
+    ? fallback.data.role
+    : rawRole
+  const nextOrganization = shouldUseFallbackOrganization
+    ? fallback.data.organization ?? ''
+    : asString(data.organization, fallback.data.organization ?? '')
+  const nextAffiliationLines = hasAffiliationLines
+    ? normalizeRoiStringArray(
+        shouldUseFallbackAffiliationLineValues
+          ? normalizeSignatureAffiliationLines(fallback.data)
+          : normalizeSignatureAffiliationLines(data),
+      )
+    : normalizeRoiStringArray(
+        shouldUseFallbackAffiliationLines
+          ? normalizeSignatureAffiliationLines(fallback.data)
+          : normalizeSignatureAffiliationLines({
+              role: nextRole,
+              organization: nextOrganization,
+            }),
+      )
 
   return {
     id: fallback.id,
@@ -762,36 +1003,20 @@ const migrateSignatureTemplate = (value: unknown, fallback: EmailSignatureTempla
     description: normalizeRoiText(asString(value.description, fallback.description)),
     data: {
       name: asString(data.name, fallback.data.name),
-      role: normalizeRoiText(RESETTABLE_SIGNATURE_ROLES.has(rawRole) ? fallback.data.role : rawRole),
-      organization: normalizeRoiText(asString(data.organization, fallback.data.organization ?? '')),
-      email:
-        isQueensTemplate && isQueensLegacyIdentity(email)
-          ? fallback.data.email
-          : email || fallback.data.email,
-      website:
-        isQueensTemplate && isQueensLegacyIdentity(website)
-          ? fallback.data.website
-          : website || fallback.data.website,
+      role: normalizeRoiText(nextRole),
+      organization: normalizeRoiText(nextOrganization),
+      affiliationLines: nextAffiliationLines,
+      email: normalizeTylerContactIdentity(email, fallback.data.email),
+      website: normalizeTylerContactIdentity(website, fallback.data.website),
       phone: asString(data.phone, fallback.data.phone),
       location: normalizeRoiText(asString(data.location, fallback.data.location ?? '')),
       profileSrc: resolveStudioAssetSrc(asString(data.profileSrc, fallback.data.profileSrc), fallback.data.profileSrc),
       profileAlt: normalizeRoiText(asString(data.profileAlt, fallback.data.profileAlt)),
-      experienceLogos:
-        isQueensTemplate
-          ? clone(fallback.data.experienceLogos)
-          : rawExperienceLogos.length > 0
-            ? rawExperienceLogos
-            : rawLegacyLogos.length > 0 && !shouldResetLegacyLogos
-              ? rawLegacyLogos
-              : clone(fallback.data.experienceLogos),
-      educationLogos:
-        isQueensTemplate
-          ? clone(fallback.data.educationLogos)
-          : rawEducationLogos.length > 0
-            ? rawEducationLogos
-            : clone(fallback.data.educationLogos),
+      experienceLogos: normalizeSignatureLogos(nextExperienceLogos, SIGNATURE_EXPERIENCE_LOGO_VALUES),
+      educationLogos: normalizeSignatureLogos(nextEducationLogos, getSignatureEducationLogoValues(fallback.id)),
+      certificationLogos: normalizeSignatureLogos(nextCertificationLogos, SIGNATURE_CERTIFICATION_LOGO_VALUES),
       signoff: normalizeRoiText(asString(data.signoff, fallback.data.signoff ?? 'Best regards,')),
-      logoTone: data.logoTone === 'original' ? 'original' : 'monochrome',
+      logoTone: data.logoTone === 'monochrome' ? 'monochrome' : 'original',
     },
   }
 }
@@ -813,6 +1038,7 @@ export const migrateResumeState = (value: unknown): MigrationResult<StoredResume
           hasLegacyResumeTemplateMarkers(template) ||
           hasLegacyRoiMarker(template) ||
           hasResumeAssetDrift(template) ||
+          hasResumeContactIdentityDrift(template) ||
           hasMcgillEducationDateDrift(template) ||
           hasQueensEducationDateDrift(template)
         )
@@ -843,13 +1069,18 @@ export const migrateCoverLetterState = (value: unknown): MigrationResult<StoredC
   const fallbackIds = new Set(fallback.templates.map((template) => template.id))
   const hasLegacyCoverLetterMarkers = Array.isArray(value.templates)
     ? value.templates.some((template) => {
-        if (!isRecord(template) || !isRecord(template.config)) return false
+        if (!isRecord(template) || !isRecord(template.config) || !isRecord(template.data)) return false
         return (
           'organization' in template.config ||
           'summary' in template.config ||
           !('presetLabel' in template.config) ||
+          !('tagline' in template.config) ||
+          !('signoffLabel' in template.data) ||
           hasLegacyRoiMarker(template) ||
           hasCoverLetterAssetDrift(template) ||
+          hasCoverLetterTaglineDrift(template) ||
+          hasCoverLetterContextNoteDrift(template) ||
+          hasCoverLetterContactIdentityDrift(template) ||
           hasLegacyCoverLetterTemplateMarkers(template)
         )
       })
@@ -885,23 +1116,29 @@ export const migrateSignatureState = (value: unknown): MigrationResult<StoredSig
         const data = template.data
         const rawExperienceLogos = asLogoAssetArray(data.experienceLogos)
         const rawEducationLogos = asLogoAssetArray(data.educationLogos)
+        const rawCertificationLogos = asLogoAssetArray(data.certificationLogos)
         const rawLegacyLogos = asLogoAssetArray(data.logos)
         return (
           !('logoTone' in data) ||
           !('signoff' in data) ||
           !Array.isArray(data.experienceLogos) ||
           !Array.isArray(data.educationLogos) ||
+          !Array.isArray(data.certificationLogos) ||
+          !Array.isArray(data.affiliationLines) ||
           RESETTABLE_SIGNATURE_ROLES.has(asString(data.role)) ||
           hasLegacyRoiMarker(template) ||
           matchesLegacySignatureLogos(
             (asString(template.id, '') || 'unb') as EmailSignatureTemplate['id'],
             rawLegacyLogos,
           ) ||
+          hasSignatureLogoGroupDrift(template) ||
           hasSignatureAssetDrift(template) ||
-          hasQueensSignatureIdentityDrift(template) ||
+          hasSignatureContactIdentityDrift(template) ||
+          hasSignatureAffiliationDrift(template) ||
           (asString(template.id) === 'queens' &&
             rawExperienceLogos.length === 0 &&
             rawEducationLogos.length === 0 &&
+            rawCertificationLogos.length === 0 &&
             rawLegacyLogos.length > 0)
         )
       })

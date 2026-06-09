@@ -84,6 +84,9 @@ export const assets = {
 
 type AssetRegistryEntry = {
   src: string
+  monoSrc?: string
+  publicSrc?: string
+  publicMonoSrc?: string
   patterns: string[]
 }
 
@@ -93,33 +96,33 @@ const legacyRoiDomain = ['fis', 'cal.ai'].join('')
 const legacyRoiAsset = ['fis', 'cal_ai_logo'].join('')
 
 const studioAssetRegistry: AssetRegistryEntry[] = [
-  { src: profileTylerAlt, patterns: ['profile-tyler-alt'] },
-  { src: profileTyler, patterns: ['profile-tyler'] },
-  { src: signatureTyler, patterns: ['signature-tyler'] },
-  { src: logoMcgillAlt, patterns: ['mcgill-alt'] },
-  { src: logoMcgill, patterns: ['mcgill'] },
-  { src: logoQueensAlt, patterns: ['queens-alt'] },
-  { src: logoQueens, patterns: ['queens'] },
-  { src: logoUnbFull, patterns: ['unb-full'] },
-  { src: logoUnb, patterns: ['unb'] },
-  { src: logoNcc, patterns: ['ncc', 'northeast-christian-college', 'northeast_christian_college'] },
-  { src: logoUoft, patterns: ['uoft'] },
-  { src: logoRotman, patterns: ['rotman'] },
-  { src: logo73Strings, patterns: ['73strings', '73-strings'] },
-  { src: logoBmo, patterns: ['bmo'] },
-  { src: logoTd, patterns: ['td'] },
-  { src: logoRbc, patterns: ['rbc'] },
-  { src: logoIrving, patterns: ['irving'] },
-  { src: logoUnitedWay, patterns: ['united-way'] },
-  { src: logoGrantThornton, patterns: ['grant-thornton'] },
-  { src: logoCfa, patterns: ['cfa'] },
-  { src: logoTrainingTheStreet, patterns: ['training-the-street'] },
-  { src: logoCsi, patterns: ['csi'] },
-  { src: logoEts, patterns: ['ets'] },
-  { src: logoBloomberg, patterns: ['bloomberg'] },
-  { src: logoWallStreetPrep, patterns: ['wall-street-prep'] },
-  { src: logoCoursera, patterns: ['coursera'] },
-  { src: logoRoi, patterns: ['roi', legacyRoiSlug, legacyRoiUnderscore, legacyRoiDomain, legacyRoiAsset] },
+  { src: profileTylerAlt, publicSrc: '/ai-assets/profile-tyler-alt.png', patterns: ['profile-tyler-alt'] },
+  { src: profileTyler, publicSrc: '/ai-assets/profile-tyler.png', patterns: ['profile-tyler'] },
+  { src: signatureTyler, publicSrc: '/ai-assets/signature-tyler.png', patterns: ['signature-tyler'] },
+  { src: logoMcgillAlt, monoSrc: monoLogoMcgillAlt, publicSrc: '/ai-assets/logos/mcgill-alt.png', publicMonoSrc: '/ai-assets/logos/mono/mcgill-alt.png', patterns: ['mcgill-alt'] },
+  { src: logoMcgill, monoSrc: monoLogoMcgill, publicSrc: '/ai-assets/logos/mcgill.png', publicMonoSrc: '/ai-assets/logos/mono/mcgill.png', patterns: ['mcgill'] },
+  { src: logoQueensAlt, monoSrc: monoLogoQueensAlt, publicSrc: '/ai-assets/logos/queens-alt.png', publicMonoSrc: '/ai-assets/logos/mono/queens-alt.png', patterns: ['queens-alt'] },
+  { src: logoQueens, monoSrc: monoLogoQueens, publicSrc: '/ai-assets/logos/queens.png', publicMonoSrc: '/ai-assets/logos/mono/queens.png', patterns: ['queens'] },
+  { src: logoUnbFull, monoSrc: monoLogoUnbFull, publicSrc: '/ai-assets/logos/unb-full.png', publicMonoSrc: '/ai-assets/logos/mono/unb-full.png', patterns: ['unb-full'] },
+  { src: logoUnb, monoSrc: monoLogoUnb, publicSrc: '/ai-assets/logos/unb.png', publicMonoSrc: '/ai-assets/logos/mono/unb.png', patterns: ['unb'] },
+  { src: logoNcc, monoSrc: monoLogoNcc, publicSrc: '/ai-assets/logos/ncc.png', publicMonoSrc: '/ai-assets/logos/mono/ncc.png', patterns: ['ncc', 'northeast-christian-college', 'northeast_christian_college'] },
+  { src: logoUoft, monoSrc: monoLogoUoft, publicSrc: '/ai-assets/logos/uoft.png', publicMonoSrc: '/ai-assets/logos/mono/uoft.png', patterns: ['uoft'] },
+  { src: logoRotman, monoSrc: monoLogoRotman, publicSrc: '/ai-assets/logos/rotman.png', publicMonoSrc: '/ai-assets/logos/mono/rotman.png', patterns: ['rotman'] },
+  { src: logo73Strings, monoSrc: monoLogo73Strings, publicSrc: '/ai-assets/logos/73strings.png', publicMonoSrc: '/ai-assets/logos/mono/73strings.png', patterns: ['73strings', '73-strings'] },
+  { src: logoBmo, monoSrc: monoLogoBmo, publicSrc: '/ai-assets/logos/bmo.png', publicMonoSrc: '/ai-assets/logos/mono/bmo.png', patterns: ['bmo'] },
+  { src: logoTd, monoSrc: monoLogoTd, publicSrc: '/ai-assets/logos/td.png', publicMonoSrc: '/ai-assets/logos/mono/td.png', patterns: ['td'] },
+  { src: logoRbc, monoSrc: monoLogoRbc, publicSrc: '/ai-assets/logos/rbc.png', publicMonoSrc: '/ai-assets/logos/mono/rbc.png', patterns: ['rbc'] },
+  { src: logoIrving, monoSrc: monoLogoIrving, publicSrc: '/ai-assets/logos/irving.png', publicMonoSrc: '/ai-assets/logos/mono/irving.png', patterns: ['irving'] },
+  { src: logoUnitedWay, monoSrc: monoLogoUnitedWay, publicSrc: '/ai-assets/logos/united-way.png', publicMonoSrc: '/ai-assets/logos/mono/united-way.png', patterns: ['united-way'] },
+  { src: logoGrantThornton, monoSrc: monoLogoGrantThornton, publicSrc: '/ai-assets/logos/grant-thornton.png', publicMonoSrc: '/ai-assets/logos/mono/grant-thornton.png', patterns: ['grant-thornton'] },
+  { src: logoCfa, monoSrc: monoLogoCfa, publicSrc: '/ai-assets/logos/cfa.png', publicMonoSrc: '/ai-assets/logos/mono/cfa.png', patterns: ['cfa'] },
+  { src: logoTrainingTheStreet, monoSrc: monoLogoTrainingTheStreet, publicSrc: '/ai-assets/logos/training-the-street.png', publicMonoSrc: '/ai-assets/logos/mono/training-the-street.png', patterns: ['training-the-street'] },
+  { src: logoCsi, monoSrc: monoLogoCsi, publicSrc: '/ai-assets/logos/csi.png', publicMonoSrc: '/ai-assets/logos/mono/csi.png', patterns: ['csi'] },
+  { src: logoEts, monoSrc: monoLogoEts, publicSrc: '/ai-assets/logos/ets.png', publicMonoSrc: '/ai-assets/logos/mono/ets.png', patterns: ['ets'] },
+  { src: logoBloomberg, monoSrc: monoLogoBloomberg, publicSrc: '/ai-assets/logos/bloomberg.png', publicMonoSrc: '/ai-assets/logos/mono/bloomberg.png', patterns: ['bloomberg'] },
+  { src: logoWallStreetPrep, monoSrc: monoLogoWallStreetPrep, publicSrc: '/ai-assets/logos/wall-street-prep.png', publicMonoSrc: '/ai-assets/logos/mono/wall-street-prep.png', patterns: ['wall-street-prep'] },
+  { src: logoCoursera, monoSrc: monoLogoCoursera, publicSrc: '/ai-assets/logos/coursera.png', publicMonoSrc: '/ai-assets/logos/mono/coursera.png', patterns: ['coursera'] },
+  { src: logoRoi, monoSrc: monoLogoRoi, publicSrc: '/ai-assets/logos/roi.png', publicMonoSrc: '/ai-assets/logos/mono/roi.png', patterns: ['roi', legacyRoiSlug, legacyRoiUnderscore, legacyRoiDomain, legacyRoiAsset] },
 ]
 
 const getAssetNeedle = (value: string) => {
@@ -150,6 +153,39 @@ export const resolveStudioAssetSrc = (value: string, fallback = '') => {
   )
 
   return match?.src ?? (fallback || trimmed)
+}
+
+const getPublicAssetSrc = (
+  entry: AssetRegistryEntry,
+  logoTone: 'original' | 'monochrome',
+) => (logoTone === 'monochrome' && entry.publicMonoSrc ? entry.publicMonoSrc : entry.publicSrc)
+
+export const resolveStudioAssetPublicSrc = (
+  value: string,
+  fallback = '',
+  logoTone: 'original' | 'monochrome' = 'original',
+) => {
+  const trimmed = value.trim()
+  if (!trimmed) return fallback
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) return trimmed
+
+  const currentEntry = studioAssetRegistry.find((entry) => entry.src === trimmed || entry.monoSrc === trimmed)
+  if (currentEntry) {
+    const currentTone = currentEntry.monoSrc === trimmed ? 'monochrome' : logoTone
+    const publicSrc = getPublicAssetSrc(currentEntry, currentTone)
+    if (publicSrc) return publicSrc
+  }
+
+  const needle = getAssetNeedle(trimmed)
+  if (needle) {
+    const match = studioAssetRegistry.find((entry) =>
+      entry.patterns.some((pattern) => needle.includes(pattern)),
+    )
+    const publicSrc = match ? getPublicAssetSrc(match, logoTone) : undefined
+    if (publicSrc) return publicSrc
+  }
+
+  return resolveStudioAssetSrc(trimmed, fallback || trimmed)
 }
 
 const monochromeLogoMap = new Map<string, string>([
@@ -187,6 +223,11 @@ export const getMonochromeLogoSrc = (src: string) => {
 export const logoOptions = [
   { label: '73 Strings', value: assets.logo73Strings },
   { label: 'BMO', value: assets.logoBmo },
+  { label: 'Bloomberg', value: assets.logoBloomberg },
+  { label: 'CFA Institute', value: assets.logoCfa },
+  { label: 'Coursera', value: assets.logoCoursera },
+  { label: 'CSI', value: assets.logoCsi },
+  { label: 'ETS', value: assets.logoEts },
   { label: 'ROI', value: assets.logoRoi },
   { label: 'Grant Thornton', value: assets.logoGrantThornton },
   { label: 'Irving Oil', value: assets.logoIrving },
@@ -197,10 +238,12 @@ export const logoOptions = [
   { label: 'RBC', value: assets.logoRbc },
   { label: 'Rotman', value: assets.logoRotman },
   { label: 'TD', value: assets.logoTd },
+  { label: 'Training The Street', value: assets.logoTrainingTheStreet },
   { label: 'UNB', value: assets.logoUnb },
   { label: 'UNB Full', value: assets.logoUnbFull },
   { label: 'Northeast Christian College', value: assets.logoNcc },
   { label: 'UofT', value: assets.logoUoft },
+  { label: 'Wall Street Prep', value: assets.logoWallStreetPrep },
 ]
 
 export const profileOptions = [

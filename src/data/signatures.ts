@@ -42,14 +42,17 @@ const createSignatureData = (
   website: string,
   educationLogos: LogoAsset[],
   role = '',
+  affiliationLines: string[] = [organization, role].filter(Boolean),
 ) => ({
   ...baseSignature,
   role,
   organization,
+  affiliationLines,
   email,
   website,
   experienceLogos: buildExperienceLogos(),
   educationLogos,
+  certificationLogos: [],
 })
 
 export const SIGNATURE_EXPERIENCE_LOGOS = buildExperienceLogos()
@@ -71,6 +74,8 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
       'tyler@tylerbustard.com',
       'tylerbustard.com',
       SIGNATURE_EDUCATION_LOGOS.unb,
+      'Finance Graduate, 2020',
+      ['University of New Brunswick', 'Bachelor of Business Administration in Finance; Class of 2020'],
     ),
   },
   {
@@ -78,10 +83,12 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
     label: 'McGill Signature',
     description: 'McGill contact preset in the unified TylerBustard.com signature style.',
     data: createSignatureData(
-      'McGill University',
+      'McGill University · Desautels Faculty of Management',
       'tyler@tylerbustard.com',
       'tylerbustard.com',
       SIGNATURE_EDUCATION_LOGOS.mcgill,
+      '',
+      ['McGill University - Desautels Faculty of Management', 'Master of Management in Finance Candidate, 2027'],
     ),
   },
   {
@@ -89,10 +96,12 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
     label: "Queen's Signature",
     description: "Queen's contact preset in the unified TylerBustard.com signature style.",
     data: createSignatureData(
-      "Queen's University",
+      "Queen's University · Smith School of Business",
       'tyler@tylerbustard.com',
       'tylerbustard.com',
       SIGNATURE_EDUCATION_LOGOS.queens,
+      'Master of Finance Candidate, 2026-2027',
+      ["Queen's University - Smith School of Business", 'Master of Finance Candidate, 2026-2027'],
     ),
   },
   {
@@ -100,10 +109,12 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
     label: 'Rotman Signature',
     description: 'Rotman contact preset in the unified TylerBustard.com signature style.',
     data: createSignatureData(
-      'Rotman School of Management',
+      'University of Toronto · Rotman School of Management',
       'tyler@tylerbustard.info',
       'tylerbustard.info',
       SIGNATURE_EDUCATION_LOGOS.rotman,
+      '',
+      ['University of Toronto - Rotman School of Management', 'Master of Business Administration Candidate, 2026'],
     ),
   },
   {
@@ -116,6 +127,7 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
       'tylerbustard.com',
       SIGNATURE_EDUCATION_LOGOS.strings,
       'Former Senior Associate, Portfolio Monitoring',
+      ['73 Strings', 'Former Senior Associate, Portfolio Monitoring; Ended May 2026'],
     ),
   },
 ]

@@ -1,7 +1,16 @@
 import { Globe, Mail, MapPin, Phone } from 'lucide-react'
+import { Fragment, type CSSProperties, type ReactElement } from 'react'
 
 import { resolveStudioAssetSrc } from '@/data/assets'
-import type { ResumeCertificationArea, ResumeTemplate } from '@/types'
+import type {
+  LogoAsset,
+  ResumeCertificationArea,
+  ResumeExperienceGroup,
+  ResumeExperienceItem,
+  ResumeLeadershipGroup,
+  ResumeLeadershipItem,
+  ResumeTemplate,
+} from '@/types'
 
 interface ResumePreviewProps {
   template: ResumeTemplate
@@ -31,7 +40,33 @@ type ResumeCertification = {
 type ResumeCertificationBlock = {
   title: string
   caption: string
+  column?: 'left' | 'right'
+  summaryValue?: string
+  summaryLogos: Array<{ src: string; alt: string }>
   certifications: ResumeCertification[]
+}
+
+type ResumeEntryGroup = {
+  id: string
+  title?: string
+  layout: 'stack' | 'grid'
+  columns?: number
+  entries: ResumeEntry[]
+}
+
+type HeaderContactItem = {
+  key: string
+  value: string
+  icon: ReactElement
+  href?: string
+  ariaLabel?: string
+  external?: boolean
+}
+
+const normalizeGroupColumns = (value: unknown) => {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
+  if (!Number.isFinite(parsed)) return 2
+  return Math.min(3, Math.max(1, Math.round(parsed)))
 }
 
 const normalizePeriod = (value: string) =>
@@ -78,21 +113,69 @@ const renderResumeEntry = (entry: ResumeEntry, options?: { showSkills?: boolean 
   </article>
 )
 
+const renderResumeEntryGroup = (
+  group: ResumeEntryGroup,
+  options?: { showSkills?: boolean },
+) => {
+  const columns = normalizeGroupColumns(group.columns)
+  const groupStyle = {
+    '--resume-entry-group-columns': String(columns),
+  } as CSSProperties
+
+  return (
+    <div key={group.id} className={`resume-entry-group resume-entry-group-${group.layout}`} style={groupStyle}>
+      {group.title ? <h4 className="resume-entry-group-title">{group.title}</h4> : null}
+      <div
+        className={
+          group.layout === 'grid'
+            ? 'resume-entry-group-body resume-entry-group-grid'
+            : 'resume-entry-group-body resume-section-body-stack'
+        }
+      >
+        {group.entries.map((entry) => renderResumeEntry(entry, options))}
+      </div>
+    </div>
+  )
+}
+
+const mapExperienceEntry = (entry: ResumeExperienceItem): ResumeEntry => ({
+  id: `experience-${slugify(entry.company)}-${slugify(entry.role)}`,
+  role: entry.role,
+  period: normalizePeriod(entry.date),
+  organization: entry.company,
+  location: entry.location,
+  logo: resolveStudioAssetSrc(entry.logoSrc, entry.logoSrc),
+  bullets: entry.bullets,
+  skills: entry.skills.join(' · '),
+})
+
+const mapLeadershipEntry = (entry: ResumeLeadershipItem): ResumeEntry => ({
+  id: `community-${slugify(entry.organization)}-${slugify(entry.role)}`,
+  role: entry.role,
+  period: normalizePeriod(entry.date),
+  organization: entry.organization,
+  location: entry.location,
+  logo: resolveStudioAssetSrc(entry.logoSrc, entry.logoSrc),
+  bullets: entry.bullets,
+  skills: entry.skills.join(' · '),
+})
+
+const mapLogoAssets = (logos: LogoAsset[] = []) =>
+  logos.map((logo) => ({
+    alt: logo.alt,
+    src: resolveStudioAssetSrc(logo.src, logo.src),
+  }))
+
 export const ResumePreview = ({ template }: ResumePreviewProps) => {
   const { data } = template
 
-  const experienceEntries: ResumeEntry[] = [
-    ...data.experience.primary,
-    ...data.experience.groups.flatMap((group) => group.items),
-  ].map((entry) => ({
-    id: `experience-${slugify(entry.company)}-${slugify(entry.role)}`,
-    role: entry.role,
-    period: normalizePeriod(entry.date),
-    organization: entry.company,
-    location: entry.location,
-    logo: resolveStudioAssetSrc(entry.logoSrc, entry.logoSrc),
-    bullets: entry.bullets,
-    skills: entry.skills.join(' · '),
+  const primaryExperienceEntries = data.experience.primary.map(mapExperienceEntry)
+  const experienceGroups: ResumeEntryGroup[] = data.experience.groups.map((group: ResumeExperienceGroup) => ({
+    id: group.id,
+    title: group.title,
+    layout: group.layout,
+    columns: group.columns,
+    entries: group.items.map(mapExperienceEntry),
   }))
 
   const educationEntries: ResumeEntry[] = data.education.map((entry) => {
@@ -110,21 +193,20 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
     }
   })
 
-  const communityEntries: ResumeEntry[] = data.leadership.flatMap((group) =>
-    group.items.map((entry) => ({
-      id: `community-${slugify(entry.organization)}`,
-      role: entry.role,
-      period: normalizePeriod(entry.date),
-      organization: entry.organization,
-      location: entry.location,
-      logo: resolveStudioAssetSrc(entry.logoSrc, entry.logoSrc),
-      bullets: entry.bullets,
-    })),
-  )
+  const communityGroups: ResumeEntryGroup[] = data.leadership.map((group: ResumeLeadershipGroup) => ({
+    id: group.id,
+    title: group.title,
+    layout: group.layout,
+    columns: group.columns,
+    entries: group.items.map(mapLeadershipEntry),
+  }))
 
   const certificationAreas: ResumeCertificationBlock[] = data.certifications.areas.map((area: ResumeCertificationArea) => ({
     title: area.title,
     caption: area.caption,
+    column: area.column,
+    summaryValue: area.summaryValue,
+    summaryLogos: mapLogoAssets(area.summaryLogos),
     certifications: [...area.items]
       .sort((left, right) => Number.parseInt(right.year, 10) - Number.parseInt(left.year, 10))
       .map((item) => ({
@@ -137,20 +219,56 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
       })),
   }))
 
-  const leftColumnCertificationTitles = new Set([
-    'Investment & Markets',
-    'Data & Business Intelligence',
-    'Graduate Admissions',
-  ])
-
   const certificationAreaColumns = [
-    certificationAreas.filter((area) => leftColumnCertificationTitles.has(area.title)),
-    certificationAreas.filter((area) => !leftColumnCertificationTitles.has(area.title)),
+    certificationAreas.filter((area) => (area.column ?? 'left') === 'left'),
+    certificationAreas.filter((area) => (area.column ?? 'left') === 'right'),
   ]
 
-  const websiteLabel = data.header.contact.website.replace(/^https?:\/\//u, '')
-  const websiteHref = `https://${websiteLabel}`
-  const phoneHref = `tel:${data.header.contact.phone.replace(/[^+\d]/gu, '')}`
+  const contactName = data.header.name.trim() || 'contact'
+  const contactEmail = data.header.contact.email.trim()
+  const contactPhone = data.header.contact.phone.trim()
+  const rawWebsite = data.header.contact.website.trim()
+  const websiteLabel = rawWebsite.replace(/^https?:\/\//u, '')
+  const websiteHref = rawWebsite.startsWith('http') ? rawWebsite : `https://${websiteLabel}`
+  const contactLocation = data.header.contact.location.trim()
+  const rawContactItems: Array<HeaderContactItem | null> = [
+    contactEmail
+      ? {
+          key: 'email',
+          value: contactEmail,
+          href: `mailto:${contactEmail}`,
+          ariaLabel: `Email ${contactName}`,
+          icon: <Mail size={13} />,
+        }
+      : null,
+    contactPhone
+      ? {
+          key: 'phone',
+          value: contactPhone,
+          href: `tel:${contactPhone.replace(/[^+\d]/gu, '')}`,
+          ariaLabel: `Call ${contactName}`,
+          icon: <Phone size={13} />,
+        }
+      : null,
+    websiteLabel
+      ? {
+          key: 'website',
+          value: websiteLabel,
+          href: websiteHref,
+          ariaLabel: `Visit ${contactName} website`,
+          external: true,
+          icon: <Globe size={13} />,
+        }
+      : null,
+    contactLocation
+      ? {
+          key: 'location',
+          value: contactLocation,
+          icon: <MapPin size={13} />,
+        }
+      : null,
+  ]
+  const contactItems = rawContactItems.filter((item): item is HeaderContactItem => Boolean(item))
 
   return (
     <>
@@ -170,43 +288,37 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
                 </div>
                 <div className="resume-header-copy">
                   <h1 className="resume-header-name">{data.header.name}</h1>
+                  {data.header.title ? <p className="resume-header-role">{data.header.title}</p> : null}
                 </div>
               </div>
-              <div id="contact" className="resume-header-contact">
-                <a
-                  href={`mailto:${data.header.contact.email}`}
-                  className="resume-header-contact-link"
-                  aria-label="Email Tyler Bustard"
-                >
-                  <Mail size={13} />
-                  {data.header.contact.email}
-                </a>
-                <span className="resume-contact-separator" aria-hidden="true" />
-                <a
-                  href={phoneHref}
-                  className="resume-header-contact-link"
-                  aria-label="Call Tyler Bustard"
-                >
-                  <Phone size={13} />
-                  {data.header.contact.phone}
-                </a>
-                <span className="resume-contact-separator" aria-hidden="true" />
-                <a
-                  href={websiteHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="resume-header-contact-link"
-                  aria-label="Visit Tyler Bustard website"
-                >
-                  <Globe size={13} />
-                  {websiteLabel}
-                </a>
-                <span className="resume-contact-separator" aria-hidden="true" />
-                <span className="resume-header-contact-item">
-                  <MapPin size={13} />
-                  {data.header.contact.location}
-                </span>
-              </div>
+              {contactItems.length > 0 ? (
+                <div id="contact" className="resume-header-contact">
+                  {contactItems.map((item, index) => (
+                    <Fragment key={item.key}>
+                      {item.href ? (
+                        <a
+                          href={item.href}
+                          target={item.external ? '_blank' : undefined}
+                          rel={item.external ? 'noopener noreferrer' : undefined}
+                          className="resume-header-contact-link"
+                          aria-label={item.ariaLabel}
+                        >
+                          {item.icon}
+                          {item.value}
+                        </a>
+                      ) : (
+                        <span className="resume-header-contact-item">
+                          {item.icon}
+                          {item.value}
+                        </span>
+                      )}
+                      {index < contactItems.length - 1 ? (
+                        <span className="resume-contact-separator" aria-hidden="true" />
+                      ) : null}
+                    </Fragment>
+                  ))}
+                </div>
+              ) : null}
               <hr className="resume-header-divider" />
             </header>
 
@@ -217,7 +329,8 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             <section id="experience" className="resume-section">
               <h3 className="resume-section-heading">Experience</h3>
               <div className="resume-section-body resume-section-body-stack">
-                {experienceEntries.map((entry) => renderResumeEntry(entry, { showSkills: true }))}
+                {primaryExperienceEntries.map((entry) => renderResumeEntry(entry, { showSkills: true }))}
+                {experienceGroups.map((group) => renderResumeEntryGroup(group))}
               </div>
             </section>
           </div>
@@ -244,6 +357,27 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
                         <div className="resume-certification-area-header">
                           <h4 className="resume-certification-area-title">{area.title}</h4>
                           <p className="resume-certification-area-caption">{area.caption}</p>
+                          {area.summaryValue || area.summaryLogos.length > 0 ? (
+                            <div className="resume-certification-area-summary">
+                              {area.summaryValue ? (
+                                <span className="resume-certification-area-summary-value">
+                                  {area.summaryValue}
+                                </span>
+                              ) : null}
+                              {area.summaryLogos.length > 0 ? (
+                                <span className="resume-certification-area-summary-logos">
+                                  {area.summaryLogos.map((logo) => (
+                                    <img
+                                      key={`${area.title}-${logo.alt}`}
+                                      src={logo.src}
+                                      alt={logo.alt}
+                                      className="resume-certification-area-summary-logo"
+                                    />
+                                  ))}
+                                </span>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
 
                         <div className="resume-certification-cards">
@@ -287,7 +421,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             <section id="community" className="resume-section">
               <h3 className="resume-section-heading">Community</h3>
               <div className="resume-section-body resume-section-body-stack">
-                {communityEntries.map((entry) => renderResumeEntry(entry))}
+                {communityGroups.map((group) => renderResumeEntryGroup(group))}
               </div>
             </section>
           </div>
@@ -302,7 +436,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           :root {
-            --pdf-density: 0.94;
+            --pdf-density: 1;
             --pdf-page-margin-top-bottom: 0.35in;
             --pdf-page-margin-left-right: 0.46in;
             --pdf-space-1: calc(2pt * var(--pdf-density));
@@ -333,7 +467,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             margin: 0 !important;
             padding: 0 !important;
             font-size: 8.35pt !important;
-            line-height: 1.34 !important;
+            line-height: 1.42 !important;
           }
 
           nav,
@@ -395,12 +529,13 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           .resume-print-page-two-flow {
             display: flex !important;
             flex-direction: column !important;
-            gap: calc(10pt * var(--pdf-density)) !important;
+            gap: calc(11.4pt * var(--pdf-density)) !important;
           }
 
           .resume-print-page-two-flow {
             page-break-before: always !important;
             break-before: page !important;
+            gap: calc(13pt * var(--pdf-density)) !important;
             margin-top: 0 !important;
           }
 
@@ -434,9 +569,9 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
 
           .resume-header-name {
             font-family: var(--font-display) !important;
-            font-size: 22pt !important;
-            line-height: 0.96 !important;
-            letter-spacing: -0.04em !important;
+            font-size: 20pt !important;
+            line-height: 1 !important;
+            letter-spacing: 0 !important;
             font-weight: 700 !important;
             font-feature-settings: 'kern' 1 !important;
             text-rendering: optimizeLegibility !important;
@@ -444,8 +579,9 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-header-role {
-            font-size: 11pt !important;
+            font-size: 10.2pt !important;
             line-height: 1.15 !important;
+            letter-spacing: 0 !important;
             margin-top: var(--pdf-space-2) !important;
             color: #64748b !important;
           }
@@ -540,7 +676,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-section-heading {
-            margin: 0 0 var(--pdf-space-3) !important;
+            margin: 0 0 calc(5.2pt * var(--pdf-density)) !important;
             padding: 0 0 var(--pdf-space-2) !important;
             border-bottom: 1px solid #cbd5e1 !important;
             color: #0f172a !important;
@@ -551,13 +687,23 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             text-transform: uppercase !important;
           }
 
+          .resume-print-page-two-flow .resume-section-heading {
+            margin-bottom: calc(7.2pt * var(--pdf-density)) !important;
+          }
+
           .resume-section-body {
             display: flex !important;
             flex-direction: column !important;
           }
 
           .resume-section-body-stack {
-            gap: calc(9pt * var(--pdf-density)) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: calc(10.4pt * var(--pdf-density)) !important;
+          }
+
+          .resume-print-page-two-flow .resume-section-body-stack {
+            gap: calc(12.4pt * var(--pdf-density)) !important;
           }
 
           .resume-summary-text {
@@ -586,21 +732,26 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-entry-title {
+            min-width: 0 !important;
             margin: 0 !important;
             color: #0f172a !important;
             font-size: var(--pdf-entry-title-size) !important;
             line-height: 1.18 !important;
-            letter-spacing: -0.018em !important;
+            letter-spacing: 0 !important;
             font-weight: 700 !important;
           }
 
           .resume-entry-date {
-            flex: 0 0 auto !important;
+            flex: 0 0 78pt !important;
             margin-left: auto !important;
+            padding-right: 1.2pt !important;
+            box-sizing: border-box !important;
             color: #94a3b8 !important;
             font-size: var(--pdf-entry-date-size) !important;
             line-height: 1.2 !important;
+            text-align: right !important;
             white-space: nowrap !important;
+            font-variant-numeric: tabular-nums !important;
           }
 
           .resume-entry-meta {
@@ -625,27 +776,30 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             width: 17pt !important;
             height: 7.4pt !important;
             flex-basis: 17pt !important;
-            filter: grayscale(1) invert(1) !important;
           }
 
           .resume-entry-bullets {
             margin: var(--pdf-space-2) 0 0 !important;
-            padding-left: 11pt !important;
+            padding-left: 10.5pt !important;
             display: grid !important;
-            gap: var(--pdf-space-1) !important;
+            gap: 3.4pt !important;
+            list-style-type: disc !important;
+            list-style-position: outside !important;
             color: #334155 !important;
             font-size: var(--pdf-bullet-size) !important;
-            line-height: 1.34 !important;
+            line-height: 1.42 !important;
           }
 
           .resume-entry-bullets li {
+            display: list-item !important;
             margin: 0 !important;
+            padding-left: 1.7pt !important;
             font-size: var(--pdf-bullet-size) !important;
-            line-height: 1.36 !important;
+            line-height: 1.42 !important;
           }
 
           #experience .resume-section-body-stack {
-            gap: calc(10.75pt * var(--pdf-density)) !important;
+            gap: calc(9.8pt * var(--pdf-density)) !important;
           }
 
           .resume-entry-skills {
@@ -655,12 +809,37 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             color: #64748b !important;
             font-size: var(--pdf-skills-size) !important;
             line-height: 1.24 !important;
-            letter-spacing: -0.01em !important;
+            letter-spacing: 0 !important;
           }
 
           .resume-entry-skills-label {
             color: #475569 !important;
             font-weight: 600 !important;
+          }
+
+          .resume-entry-group {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: calc(4.6pt * var(--pdf-density)) !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          .resume-entry-group-title {
+            margin: 0 !important;
+            color: #475569 !important;
+            font-size: 7.6pt !important;
+            line-height: 1.2 !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.1em !important;
+            text-transform: uppercase !important;
+          }
+
+          .resume-entry-group-grid {
+            display: grid !important;
+            grid-template-columns: repeat(var(--resume-entry-group-columns, 2), minmax(0, 1fr)) !important;
+            column-gap: var(--pdf-column-gap) !important;
+            row-gap: var(--pdf-space-3) !important;
           }
 
           .resume-certification-columns {
@@ -674,7 +853,11 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-start !important;
-            gap: calc(7pt * var(--pdf-density)) !important;
+            gap: calc(6.4pt * var(--pdf-density)) !important;
+          }
+
+          .resume-print-page-two-flow .resume-certification-column {
+            gap: calc(8.2pt * var(--pdf-density)) !important;
           }
 
           .resume-certification-area {
@@ -687,8 +870,12 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             background: transparent !important;
           }
 
+          .resume-print-page-two-flow .resume-certification-area {
+            padding-top: calc(3.4pt * var(--pdf-density)) !important;
+          }
+
           .resume-certification-area-header {
-            margin-bottom: calc(4.5pt * var(--pdf-density)) !important;
+            margin-bottom: calc(4.8pt * var(--pdf-density)) !important;
           }
 
           .resume-certification-area-title {
@@ -708,6 +895,15 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             color: #64748b !important;
           }
 
+          .resume-certification-area-summary {
+            margin-top: var(--pdf-space-1) !important;
+            gap: var(--pdf-space-2) !important;
+          }
+
+          .resume-certification-area-summary-logo {
+            max-height: 8pt !important;
+          }
+
           .resume-certification-cards {
             display: block !important;
           }
@@ -722,13 +918,22 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-certification-card + .resume-certification-card {
-            margin-top: calc(2.4pt * var(--pdf-density)) !important;
-            padding-top: calc(2.4pt * var(--pdf-density)) !important;
+            margin-top: calc(2.7pt * var(--pdf-density)) !important;
+            padding-top: calc(2.7pt * var(--pdf-density)) !important;
             border-top: 1px solid #edf2f7 !important;
+          }
+
+          .resume-print-page-two-flow .resume-certification-card + .resume-certification-card {
+            margin-top: calc(3.5pt * var(--pdf-density)) !important;
+            padding-top: calc(3.5pt * var(--pdf-density)) !important;
           }
 
           #community .resume-section-body-stack {
             gap: var(--pdf-space-3) !important;
+          }
+
+          .resume-print-page-two-flow #community .resume-section-body-stack {
+            gap: calc(9.2pt * var(--pdf-density)) !important;
           }
 
           .resume-certification-card-brand {
@@ -768,7 +973,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             margin: 0 !important;
             font-size: 7.82pt !important;
             line-height: 1.22 !important;
-            letter-spacing: -0.01em !important;
+            letter-spacing: 0 !important;
             color: #0f172a !important;
             font-weight: 600 !important;
           }
@@ -789,14 +994,21 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
             flex-direction: column !important;
             align-items: flex-end !important;
             gap: 1pt !important;
-            flex: 0 0 auto !important;
+            flex: 0 0 43pt !important;
+            min-width: 43pt !important;
           }
 
           .resume-certification-card-year {
+            display: block !important;
+            width: 100% !important;
+            padding-right: 0.9pt !important;
+            box-sizing: border-box !important;
             font-size: 6.95pt !important;
             line-height: 1.2 !important;
             color: #94a3b8 !important;
+            text-align: right !important;
             white-space: nowrap !important;
+            font-variant-numeric: tabular-nums !important;
           }
 
           .resume-certification-card-detail {

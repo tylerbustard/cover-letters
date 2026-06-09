@@ -80,21 +80,21 @@ select {
 }
 
 .studio-shell-header {
-  position: sticky;
-  top: 0;
+  position: relative;
+  top: auto;
   z-index: 40;
-  padding-bottom: 1rem;
+  padding-bottom: 1.1rem;
 }
 
 .studio-shell-header-bar {
   max-width: 1460px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 0.75fr) minmax(420px, 1fr) minmax(500px, 1fr);
   gap: 1rem;
   align-items: center;
-  padding: 0.95rem 1.15rem;
-  border-radius: 1.6rem;
+  padding: 0.82rem 1rem;
+  border-radius: 1.35rem;
   border: 1px solid var(--studio-glass-border);
   background: var(--studio-glass);
   box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
@@ -154,9 +154,9 @@ select {
 }
 
 .studio-brand-title {
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-size: 1.22rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: #f8fafc;
 }
 
@@ -202,9 +202,10 @@ select {
 
 .studio-shell-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: flex-end;
-  gap: 0.95rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
@@ -220,24 +221,32 @@ select {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.42rem;
+  width: 100%;
+}
+
+.studio-shell-action-row button {
+  height: 2.25rem;
+  padding: 0.45rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
 }
 
 .studio-workspace {
   max-width: 1460px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(320px, 410px) minmax(0, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: minmax(360px, 470px) minmax(0, 1fr);
+  gap: 1.25rem;
   align-items: start;
 }
 
 .studio-editor-rail {
   position: sticky;
-  top: 7rem;
+  top: 1.2rem;
   align-self: start;
-  max-height: calc(100vh - 8.5rem);
+  max-height: calc(100vh - 2.4rem);
   overflow-y: auto;
   padding-right: 0.35rem;
   display: flex;
@@ -286,6 +295,271 @@ select {
   gap: 0.85rem;
 }
 
+.studio-overview-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.studio-overview-label,
+.studio-metric-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.studio-overview-title {
+  margin: 0.22rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: #0f172a;
+}
+
+.studio-overview-output {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.95rem;
+  padding: 0.34rem 0.58rem;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.studio-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.studio-metric-card {
+  display: flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-width: 0;
+  padding: 0.68rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.studio-metric-icon {
+  width: 1.85rem;
+  height: 1.85rem;
+  flex: 0 0 1.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #2563eb;
+}
+
+.studio-metric-value {
+  margin: 0.1rem 0 0;
+  font-size: 0.98rem;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.studio-section-jump-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.studio-section-jump {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.44fr) minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: baseline;
+  padding: 0.54rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  text-decoration: none;
+}
+
+.studio-section-jump span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.studio-section-jump small {
+  min-width: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.studio-section-jump:hover span,
+.studio-section-jump:focus-visible span {
+  color: #1d4ed8;
+}
+
+.studio-ai-map-toolbar,
+.studio-ai-map-summary,
+.studio-locked-rule,
+.studio-ai-map-section summary,
+.studio-ai-map-entry,
+.studio-ai-collection-entry {
+  display: flex;
+  align-items: center;
+}
+
+.studio-ai-map-toolbar {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.studio-ai-map-summary {
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.studio-ai-map-summary span,
+.studio-ai-map-entry span,
+.studio-ai-collection-entry span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.studio-ai-map-summary span {
+  padding: 0.34rem 0.52rem;
+}
+
+.studio-locked-rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+}
+
+.studio-locked-rule {
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  color: #475569;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.studio-locked-rule svg {
+  flex: 0 0 auto;
+  color: #059669;
+}
+
+.studio-ai-map-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.studio-ai-map-section {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.studio-ai-map-section summary {
+  cursor: pointer;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.7rem 0;
+  list-style: none;
+}
+
+.studio-ai-map-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.studio-ai-map-section summary span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.studio-ai-map-section summary small {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: right;
+}
+
+.studio-ai-map-entry-list,
+.studio-ai-collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+  padding-bottom: 0.72rem;
+}
+
+.studio-ai-map-entry,
+.studio-ai-collection-entry {
+  gap: 0.55rem;
+  justify-content: space-between;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.studio-ai-map-entry > div,
+.studio-ai-collection-entry > div {
+  min-width: 6.5rem;
+  max-width: 10rem;
+}
+
+.studio-ai-map-entry p,
+.studio-ai-collection-entry p {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.studio-ai-map-entry small,
+.studio-ai-collection-entry small {
+  display: block;
+  margin-top: 0.12rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.studio-ai-map-entry code,
+.studio-ai-collection-entry code {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0.34rem 0.42rem;
+  border-radius: 0.55rem;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.67rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.studio-ai-map-entry span,
+.studio-ai-collection-entry span {
+  flex: 0 0 auto;
+  padding: 0.28rem 0.44rem;
+}
+
 .studio-field {
   display: flex;
   flex-direction: column;
@@ -294,7 +568,7 @@ select {
 
 .studio-inline-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
   gap: 0.75rem;
 }
 
@@ -530,7 +804,7 @@ select {
   margin: 0.3rem 0 0;
   font-size: 1.5rem;
   line-height: 1.05;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   color: #f8fafc;
 }
 
@@ -579,7 +853,7 @@ select {
   margin-top: 0.65rem;
   font-size: clamp(2.6rem, 5vw, 4.35rem);
   line-height: 0.96;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   color: #ffffff;
 }
 
@@ -771,7 +1045,7 @@ select {
   margin-top: 0.3rem;
   font-size: clamp(2.8rem, 4vw, 3.95rem);
   line-height: 0.95;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 .resume-document-header-copy h2 {
@@ -1065,19 +1339,19 @@ select {
   box-sizing: border-box;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: var(--card);
-  --resume-screen-section-gap: 1rem;
-  --resume-screen-section-heading-gap: 0.75rem;
-  --resume-screen-entry-gap: 0.72rem;
-  --resume-screen-meta-gap-y: 0.18rem;
+  --resume-screen-section-gap: 1.08rem;
+  --resume-screen-section-heading-gap: 0.66rem;
+  --resume-screen-entry-gap: 0.82rem;
+  --resume-screen-meta-gap-y: 0.2rem;
   --resume-screen-meta-gap-x: 0.5rem;
-  --resume-screen-bullets-gap: 0.16rem;
-  --resume-screen-skills-gap: 0.24rem;
-  --resume-screen-cert-area-gap: 0.55rem;
-  --resume-screen-cert-card-gap: 0.22rem;
+  --resume-screen-bullets-gap: 0.2rem;
+  --resume-screen-skills-gap: 0.28rem;
+  --resume-screen-cert-area-gap: 0.68rem;
+  --resume-screen-cert-card-gap: 0.28rem;
 }
 
 .resume-header {
-  margin-bottom: 1.35rem;
+  margin-bottom: 1.24rem;
 }
 
 .resume-header-top {
@@ -1121,20 +1395,20 @@ select {
 .resume-header-name {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.75rem, 4.35vw, 4.05rem);
-  line-height: 0.92;
-  letter-spacing: -0.058em;
+  font-size: 2.72rem;
+  line-height: 1;
+  letter-spacing: 0;
   font-weight: 700;
   color: hsl(228 17% 12%);
   text-wrap: balance;
 }
 
 .resume-header-role {
-  margin: 0.4rem 0 0;
+  margin: 0.34rem 0 0;
   font-family: var(--font-text);
-  font-size: clamp(1.04rem, 1.28vw, 1.34rem);
-  line-height: 1.14;
-  letter-spacing: -0.025em;
+  font-size: 1.02rem;
+  line-height: 1.22;
+  letter-spacing: 0;
   font-weight: 400;
   color: hsl(215 16% 50%);
   text-wrap: balance;
@@ -1188,8 +1462,49 @@ select {
   max-width: 56rem;
   color: hsl(215 16% 37%);
   line-height: 1.55;
-  letter-spacing: -0.018em;
+  letter-spacing: 0;
   margin: 0;
+}
+
+.cover-letter-credential {
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+}
+
+.cover-letter-credential-logo-shell {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.cover-letter-credential-logo {
+  height: 1.72rem;
+  width: auto;
+  max-width: 3.1rem;
+  object-fit: contain;
+  display: block;
+}
+
+.cover-letter-credential-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.cover-letter-credential-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: hsl(222 30% 18%);
+  line-height: 1.2;
+}
+
+.cover-letter-credential-detail {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: hsl(215 16% 47%);
+  line-height: 1.28;
+  margin-top: 0.04rem;
 }
 
 .resume-print-page-one-flow,
@@ -1207,7 +1522,7 @@ select {
 
 .resume-section-heading {
   margin: 0 0 var(--resume-screen-section-heading-gap);
-  padding: 0 0 0.38rem;
+  padding: 0 0 0.34rem;
   border-bottom: 1px solid rgba(203, 213, 225, 0.95);
   color: hsl(228 17% 12%);
   font-family: var(--font-display);
@@ -1240,6 +1555,7 @@ select {
 }
 
 .resume-entry-title {
+  min-width: 0;
   margin: 0;
   color: hsl(228 17% 12%);
   font-size: 0.875rem;
@@ -1249,12 +1565,16 @@ select {
 }
 
 .resume-entry-date {
-  flex: 0 0 auto;
+  flex: 0 0 8rem;
   margin-left: auto;
+  padding-right: 0.08rem;
+  box-sizing: border-box;
   color: hsl(215 12% 56%);
   font-size: 0.75rem;
   line-height: 1.22;
+  text-align: right;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .resume-entry-meta {
@@ -1279,7 +1599,6 @@ select {
   width: 1.55rem;
   height: 0.86rem;
   flex-basis: 1.55rem;
-  filter: grayscale(1) invert(1);
 }
 
 .resume-entry-meta-separator {
@@ -1288,18 +1607,22 @@ select {
 }
 
 .resume-entry-bullets {
-  margin: 0.3rem 0 0;
-  padding-left: 1rem;
+  margin: 0.34rem 0 0;
+  padding-left: 1.06rem;
   display: grid;
   gap: var(--resume-screen-bullets-gap);
+  list-style-type: disc;
+  list-style-position: outside;
   color: hsl(215 16% 37%);
   font-size: 0.875rem;
   line-height: 1.42;
-  letter-spacing: -0.016em;
+  letter-spacing: 0;
 }
 
 .resume-entry-bullets li {
+  display: list-item;
   margin: 0;
+  padding-left: 0.18rem;
 }
 
 .resume-entry-skills {
@@ -1308,12 +1631,40 @@ select {
   color: hsl(215 12% 52%);
   font-size: 0.72rem;
   line-height: 1.28;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .resume-entry-skills-label {
   color: hsl(215 16% 39%);
   font-weight: 600;
+}
+
+.resume-entry-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.58rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-entry-group-title {
+  margin: 0;
+  color: hsl(215 16% 34%);
+  font-size: 0.76rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.resume-entry-group-body {
+  min-width: 0;
+}
+
+.resume-entry-group-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--resume-entry-group-columns, 2), minmax(0, 1fr));
+  gap: var(--resume-screen-entry-gap) 1rem;
 }
 
 .resume-certification-columns {
@@ -1340,12 +1691,12 @@ select {
   border: 0;
   border-top: 1px solid rgba(226, 232, 240, 0.98);
   border-radius: 0;
-  padding: 0.6rem 0 0;
+  padding: 0.64rem 0 0;
   background: transparent;
 }
 
 .resume-certification-area-header {
-  margin-bottom: 0.48rem;
+  margin-bottom: 0.52rem;
 }
 
 .resume-certification-area-title {
@@ -1362,8 +1713,40 @@ select {
   margin: 0.22rem 0 0;
   font-size: 0.76rem;
   line-height: 1.35;
-  letter-spacing: -0.014em;
+  letter-spacing: 0;
   color: hsl(215 12% 52%);
+}
+
+.resume-certification-area-summary {
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.46rem;
+  flex-wrap: wrap;
+}
+
+.resume-certification-area-summary-value {
+  color: hsl(215 16% 39%);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.resume-certification-area-summary-logos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.resume-certification-area-summary-logo {
+  display: block;
+  width: auto;
+  max-width: 2.35rem;
+  max-height: 0.88rem;
+  object-fit: contain;
+  opacity: 0.78;
 }
 
 .resume-certification-cards {
@@ -1424,7 +1807,7 @@ select {
   color: hsl(228 17% 14%);
   font-size: 0.84rem;
   line-height: 1.22;
-  letter-spacing: -0.016em;
+  letter-spacing: 0;
   font-weight: 600;
 }
 
@@ -1437,7 +1820,7 @@ select {
   color: hsl(215 12% 52%);
   font-size: 0.73rem;
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .resume-certification-card-meta {
@@ -1445,14 +1828,21 @@ select {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.1rem;
-  flex: 0 0 auto;
+  flex: 0 0 4rem;
+  min-width: 4rem;
 }
 
 .resume-certification-card-year {
+  display: block;
+  width: 100%;
+  padding-right: 0.06rem;
+  box-sizing: border-box;
   color: hsl(215 12% 56%);
   font-size: 0.72rem;
   line-height: 1.2;
+  text-align: right;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .resume-certification-card-detail {
@@ -1460,7 +1850,7 @@ select {
   font-size: 0.66rem;
   line-height: 1.2;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .cover-letter-document {
@@ -1525,7 +1915,7 @@ select {
   color: #334155;
   font-size: 0.86rem;
   line-height: 1.42;
-  letter-spacing: -0.014em;
+  letter-spacing: 0;
 }
 
 .cover-letter-document-recipient-line {
@@ -1556,7 +1946,7 @@ select {
   color: hsl(215 16% 37%);
   font-size: 0.875rem;
   line-height: 1.48;
-  letter-spacing: -0.016em;
+  letter-spacing: 0;
 }
 
 .cover-letter-document-paragraphs p {
@@ -1602,7 +1992,7 @@ select {
 .signature-document-signoff {
   margin: 0;
   font-family: var(--font-text);
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   line-height: 1.35;
   font-weight: 500;
   letter-spacing: 0;
@@ -1610,10 +2000,10 @@ select {
 }
 
 .signature-document-main {
-  margin-top: 0.625rem;
+  margin-top: 0.58rem;
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
-  gap: 0.875rem;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  gap: 0.82rem;
   align-items: start;
 }
 
@@ -1624,8 +2014,8 @@ select {
 }
 
 .signature-document-avatar {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 3.4rem;
+  height: 3.4rem;
   border-radius: 9999px;
   border: 1px solid rgba(203, 213, 225, 0.96);
   background: rgba(255, 255, 255, 0.96);
@@ -1640,28 +2030,46 @@ select {
 
 .signature-document-name {
   margin: 0;
-  font-family: var(--font-text);
-  font-size: 1.375rem;
-  line-height: 1.08;
+  font-family: var(--font-display);
+  font-size: 1.52rem;
+  line-height: 1.04;
   letter-spacing: 0;
   font-weight: 700;
   color: #0f172a;
   text-wrap: balance;
 }
 
-.signature-document-role {
-  margin: 0.25rem 0 0;
+.signature-document-role,
+.signature-document-affiliation-group {
+  margin: 0.2rem 0 0;
+}
+
+.signature-document-affiliation {
+  margin: 0;
   font-family: var(--font-text);
   font-size: 0.8125rem;
   line-height: 1.35;
   letter-spacing: 0;
-  font-weight: 600;
   color: #334155;
   text-wrap: balance;
 }
 
+.signature-document-role,
+.signature-document-affiliation-role {
+  font-weight: 600;
+}
+
+.signature-document-affiliation-institution {
+  font-weight: 500;
+  color: #334155;
+}
+
+.signature-document-affiliation-role {
+  margin-top: 0.02rem;
+}
+
 .signature-document-organization {
-  margin: 0.0625rem 0 0;
+  margin: 0.05rem 0 0;
   font-family: var(--font-text);
   font-size: 0.78125rem;
   line-height: 1.35;
@@ -1670,7 +2078,7 @@ select {
 }
 
 .signature-document-contact-rail {
-  margin-top: 0.625rem;
+  margin-top: 0.58rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1699,6 +2107,19 @@ select {
   color: #334155;
 }
 
+.signature-document-contact-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.34rem;
+  color: #64748b;
+  flex: 0 0 auto;
+}
+
+.signature-document-contact-icon svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
 .signature-document-contact-separator {
   padding: 0 0.75rem;
   width: auto;
@@ -1711,9 +2132,9 @@ select {
 }
 
 .signature-document-divider {
-  margin-top: 0.5625rem;
+  margin-top: 0.55rem;
   height: 1px;
-  width: 75%;
+  width: 100%;
   background: rgba(203, 213, 225, 0.95);
 }
 
@@ -1826,11 +2247,11 @@ select {
   }
 
   .resume-header-name {
-    font-size: clamp(2.2rem, 11vw, 3.3rem);
+    font-size: 2.35rem;
   }
 
   .resume-header-role {
-    font-size: clamp(0.98rem, 4.8vw, 1.14rem);
+    font-size: 0.98rem;
   }
 
   .resume-header-contact {
@@ -1846,6 +2267,10 @@ select {
   .resume-certification-columns {
     grid-template-columns: 1fr;
     gap: 0.95rem;
+  }
+
+  .resume-entry-group-grid {
+    grid-template-columns: 1fr;
   }
 
   .resume-certification-column {
@@ -1866,6 +2291,17 @@ select {
   .studio-auth-page,
   .studio-boot {
     padding: 1rem;
+  }
+
+  .studio-shell-actions {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .studio-shell-action-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    width: 100%;
   }
 
   .studio-preview-stage {
@@ -1946,15 +2382,53 @@ select {
   }
 
   .signature-document-name {
-    font-size: 1.75rem;
+    font-size: 1.42rem;
   }
 
-  .signature-document-organization {
+  .signature-document-organization,
+  .signature-document-affiliation {
     font-size: 0.82rem;
   }
 }
 
 @media (max-width: 640px) {
+  .studio-overview-hero,
+  .studio-ai-map-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .studio-overview-output {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
+  .studio-metric-grid,
+  .studio-section-jump {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-section-jump {
+    gap: 0.24rem;
+  }
+
+  .studio-ai-map-entry,
+  .studio-ai-collection-entry {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .studio-ai-map-entry > div,
+  .studio-ai-collection-entry > div {
+    width: 100%;
+    max-width: none;
+  }
+
+  .studio-ai-map-entry code,
+  .studio-ai-collection-entry code {
+    width: 100%;
+  }
+
   .resume-page {
     padding: clamp(1.25rem, 6vw, 1.75rem);
   }

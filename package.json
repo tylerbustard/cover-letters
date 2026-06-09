@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:automation": "node scripts/verify-automation-surfaces.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.4",

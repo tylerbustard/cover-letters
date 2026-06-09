@@ -1,7 +1,7 @@
 import type { StudioEditSchema } from '@/types'
 
 export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
-  schemaVersion: '2026-03-30-ai-v2',
+  schemaVersion: '2026-06-01-ai-v5',
   assetOptions: {
     portraits: [
       { label: 'Profile (Default)', value: 'profile-tyler' },
@@ -21,6 +21,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
       { label: 'Irving Oil', value: 'irving' },
       { label: 'McGill', value: 'mcgill' },
       { label: 'McGill Alt', value: 'mcgill-alt' },
+      { label: 'Northeast Christian College', value: 'ncc' },
       { label: "Queen's", value: 'queens' },
       { label: "Queen's Alt", value: 'queens-alt' },
       { label: 'RBC', value: 'rbc' },
@@ -75,9 +76,9 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         },
       ],
       lockedRules: [
-        'Headings such as Experience, Education, Certifications, and Community are system-owned.',
-        'Section order, card structure, spacing, typography, margins, and PDF print rules are locked.',
-        'Experience group layout, certification column placement, and community layout remain locked.',
+        'Document text, entries, logos, certification columns, and grouping metadata are customizable.',
+        'Page geometry, typography, print margins, and email-safe export rules stay protected.',
+        'Automation may propose content and structure changes, but reviewed drafts are required before apply.',
       ],
       fieldTemplates: {
         header: [
@@ -93,7 +94,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             fieldLabel: 'Title',
             valueType: 'string',
             allowedOps: ['replaceField'],
-            affectsOutput: false,
+            affectsOutput: true,
           },
           {
             key: 'profileSrc',
@@ -192,14 +193,21 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             fieldLabel: 'Group title',
             valueType: 'string',
             allowedOps: ['replaceField'],
-            affectsOutput: false,
+            affectsOutput: true,
           },
           {
             key: 'layout',
             fieldLabel: 'Layout',
             valueType: 'metadata',
-            allowedOps: [],
-            affectsOutput: false,
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+          },
+          {
+            key: 'columns',
+            fieldLabel: 'Grid columns',
+            valueType: 'number',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
           },
         ],
         experienceEntry: [
@@ -266,8 +274,8 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             key: 'column',
             fieldLabel: 'Column',
             valueType: 'metadata',
-            allowedOps: [],
-            affectsOutput: false,
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
           },
           {
             key: 'caption',
@@ -329,6 +337,13 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             affectsOutput: true,
             assetSource: 'logos',
           },
+          {
+            key: 'emphasis',
+            fieldLabel: 'Emphasis',
+            valueType: 'boolean',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+          },
         ],
         leadershipGroup: [
           {
@@ -336,14 +351,21 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             fieldLabel: 'Group title',
             valueType: 'string',
             allowedOps: ['replaceField'],
-            affectsOutput: false,
+            affectsOutput: true,
           },
           {
             key: 'layout',
             fieldLabel: 'Layout',
             valueType: 'metadata',
-            allowedOps: [],
-            affectsOutput: false,
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+          },
+          {
+            key: 'columns',
+            fieldLabel: 'Grid columns',
+            valueType: 'number',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
           },
         ],
         leadershipItem: [
@@ -419,7 +441,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
           sectionId: 'additional-experience',
           sectionLabel: 'Additional experience',
           entryType: 'experienceGroup',
-          allowedOps: [],
+          allowedOps: ['createEntry', 'deleteEntry'],
         },
         {
           id: 'data.certifications.areas',
@@ -433,7 +455,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
           sectionId: 'community',
           sectionLabel: 'Community',
           entryType: 'leadershipGroup',
-          allowedOps: [],
+          allowedOps: ['createEntry', 'deleteEntry'],
         },
       ],
     },
@@ -462,8 +484,8 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         },
       ],
       lockedRules: [
-        'The shared identity summary line, print margins, spacing, and typography are locked.',
-        'The editorial document structure and signoff layout remain system-owned.',
+        'Sender, recipient, body, portrait, signature, tagline, and context summary are customizable.',
+        'Page geometry, typography, print margins, and reviewed-draft apply flow stay protected.',
       ],
       fieldTemplates: {
         template: [
@@ -476,17 +498,17 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
           },
           {
             key: 'tagline',
-            fieldLabel: 'Tagline',
+            fieldLabel: 'Header title',
             valueType: 'string',
             allowedOps: ['replaceField'],
-            affectsOutput: false,
+            affectsOutput: true,
           },
           {
             key: 'contextNote',
             fieldLabel: 'Context note',
             valueType: 'string',
             allowedOps: ['replaceField'],
-            affectsOutput: false,
+            affectsOutput: true,
           },
           {
             key: 'profileSrc',
@@ -615,6 +637,13 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             allowedOps: ['replaceField'],
             affectsOutput: true,
           },
+          {
+            key: 'signoffLabel',
+            fieldLabel: 'Signoff label',
+            valueType: 'string',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+          },
         ],
       },
       collectionTemplates: [],
@@ -630,7 +659,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         {
           id: 'identity',
           label: 'Identity',
-          description: 'Preview and export share the same updated structure.',
+          description: 'Name, title, institution line, contact details, and logo groups used by preview and export.',
         },
         {
           id: 'html',
@@ -639,9 +668,9 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         },
       ],
       lockedRules: [
-        'The contact rail order, icon order, muted logo treatment, and typography are locked.',
+        'Identity fields, logo groups, certification logos, and logo tone are customizable.',
+        'The contact rail order, icon order, and typography are protected.',
         'HTML table structure and email-safe formatting remain system-owned.',
-        'Experience logos and education logos are edited separately and stay grouped in the final signature.',
       ],
       fieldTemplates: {
         identity: [
@@ -653,17 +682,10 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             affectsOutput: true,
           },
           {
-            key: 'role',
-            fieldLabel: 'Role',
-            valueType: 'string',
-            allowedOps: ['replaceField'],
-            affectsOutput: true,
-          },
-          {
-            key: 'organization',
-            fieldLabel: 'Organization',
-            valueType: 'string',
-            allowedOps: ['replaceField'],
+            key: 'affiliationLines',
+            fieldLabel: 'Affiliation lines',
+            valueType: 'stringList',
+            allowedOps: ['replaceField', 'addListItem', 'removeListItem'],
             affectsOutput: true,
           },
           {
@@ -726,11 +748,19 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             assetSource: 'logos',
           },
           {
+            key: 'certificationLogos',
+            fieldLabel: 'Certification logos',
+            valueType: 'assetList',
+            allowedOps: ['replaceField', 'addListItem', 'removeListItem'],
+            affectsOutput: true,
+            assetSource: 'logos',
+          },
+          {
             key: 'logoTone',
             fieldLabel: 'Logo tone',
             valueType: 'metadata',
-            allowedOps: [],
-            affectsOutput: false,
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
           },
         ],
       },

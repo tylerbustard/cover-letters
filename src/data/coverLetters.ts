@@ -17,15 +17,16 @@ const createInitialData = (config: VariationConfig): CoverLetterData => ({
   yourAddress: config.defaults.yourAddress,
   companyAddress: 'Toronto, Ontario',
   openingParagraph:
-    'I am writing to express my interest in opportunities where rigorous finance, strong communication, and hands-on analytics can create measurable impact. With experience spanning portfolio monitoring, investment analysis, and client-facing operations, I am excited by the opportunity to contribute to a high-performing team.',
+    'I am interested in finance and technology roles where careful analysis, clean execution, and practical judgment have to come together. My background spans portfolio monitoring, investment research, client-facing banking, and data-driven reporting, which gives me a useful mix of technical finance work and operating discipline. I am strongest in roles where the work is detail-heavy, deadlines matter, and the final output needs to be clear enough for portfolio, client, or leadership decisions. That is the kind of work I want to keep doing, especially in teams that value accuracy, pace, and accountability.',
   bodyParagraph1:
-    'In my recent roles, I have supported portfolio and operating teams through disciplined analysis, clear execution, and thoughtful cross-functional communication. From validating fund cash flows and holdings across multiple portfolios to producing investment research and recommendation memos, I have built a track record of turning detail-heavy work into dependable outcomes.',
+    'At 73 Strings, I worked as a Senior Associate in portfolio monitoring, reviewing NAV inputs, holdings, cash flows, and reconciliation items across multiple portfolios. That work required accuracy under daily pressure, comfort with fund data, and steady communication with operations, risk, and portfolio stakeholders. I learned how to investigate exceptions without losing sight of the broader workflow, and how to turn messy source information into dependable reporting that other teams could use. It also sharpened the habits that matter in finance roles: documenting assumptions, checking source data, escalating issues early, and staying calm when timelines are tight.',
   bodyParagraph2:
-    'What differentiates my approach is the combination of financial training and operating fluency. I am comfortable moving between valuation, markets, reporting, and workflow improvement, and I bring the judgment required to communicate clearly with stakeholders while maintaining a high standard of accuracy.',
+    'Before that, I built investment and client-service experience across ROI, BMO Private Wealth, TD, and RBC. At ROI, I analyzed public company financial statements and supported AI-driven product features, combining finance judgment with data and product thinking. At BMO and in banking roles, I supported portfolio preparation, client communication, needs-based advising, and product discussions. Those experiences helped me build a practical view of finance: the numbers matter, but so does the way the analysis is explained and acted on. I am comfortable translating technical work into plain language for people who need to make decisions quickly.',
   bodyParagraph3:
-    'Alongside technical capability, I bring a collaborative working style, strong client orientation, and a bias toward follow-through. I am motivated by environments where analytical rigor, accountability, and thoughtful decision-making are valued.',
+    'My University of New Brunswick finance background, investment fund experience, Bloomberg Market Concepts certificate, and valuation coursework give me a strong base for analytical work. I am comfortable moving between Excel, SQL, Python, reporting tools, valuation concepts, and client-ready writing. I also bring a record of following through in environments where small errors can create larger downstream issues, which is why I care about process, documentation, and direct communication. Across each role, I have tried to be the person who makes the work more reliable, not just the person who completes the next task.',
   closingParagraph:
-    'Thank you for considering my application. I would welcome the opportunity to discuss how my background in finance, technology, and execution-focused analysis can support your team.',
+    'I would welcome the opportunity to discuss how my background in portfolio monitoring, financial analysis, and technology enabled reporting could support your team. I bring a steady work style, a high standard for accuracy, and the judgment to keep improving the work while still getting it done. Thank you for considering my application; I would be glad to discuss where my experience can be most useful in the role and on the team right away.',
+  signoffLabel: 'Sincerely,',
 })
 
 export const COVER_LETTER_TEMPLATES: CoverLetterTemplate[] = COVER_LETTER_VARIATIONS.map(
@@ -35,7 +36,7 @@ export const COVER_LETTER_TEMPLATES: CoverLetterTemplate[] = COVER_LETTER_VARIAT
     description: variation.description,
     config: {
       presetLabel: variation.label,
-      tagline: 'Finance & Technology',
+      tagline: variation.titleLabel,
       contextNote: variation.contextLabel,
       profileSrc: variation.profileSrc,
       profileAlt: variation.profileAlt,

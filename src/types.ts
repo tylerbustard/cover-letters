@@ -26,6 +26,7 @@ export interface CoverLetterData {
   bodyParagraph2: string
   bodyParagraph3: string
   closingParagraph: string
+  signoffLabel: string
 }
 
 export interface CoverLetterConfig {
@@ -158,6 +159,7 @@ export interface EmailSignatureData {
   name: string
   role: string
   organization?: string
+  affiliationLines?: string[]
   email: string
   website: string
   phone: string
@@ -166,6 +168,7 @@ export interface EmailSignatureData {
   profileAlt: string
   experienceLogos: LogoAsset[]
   educationLogos: LogoAsset[]
+  certificationLogos: LogoAsset[]
   signoff?: string
   logoTone?: 'monochrome' | 'original'
 }
@@ -208,9 +211,11 @@ export type EditableValueType =
   | 'string'
   | 'text'
   | 'date'
+  | 'boolean'
   | 'asset'
   | 'assetList'
   | 'stringList'
+  | 'number'
   | 'metadata'
 
 export type AiOperationType =
