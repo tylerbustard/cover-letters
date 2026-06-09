@@ -1,8 +1,4 @@
 import profileImage from '@/assets/profile-tyler.png'
-import queensLogo from '@/assets/logos/queens.png'
-import unbLogo from '@/assets/logos/unb.png'
-import uoftLogo from '@/assets/logos/uoft.png'
-import mcgillLogo from '@/assets/logos/mcgill.png'
 import signatureImage from '@/assets/signature-tyler.png'
 
 import { CoverLetterData, VariationId } from '@/types'
@@ -11,19 +7,16 @@ export interface VariationConfig {
   id: VariationId
   label: string
   description: string
-  accent: string
-  accentLight: string
-  accentDark: string
-  tagline: string
-  organization: string
-  summary: string
-  logoSrc: string
-  logoAlt: string
+  contextLabel: string
+  titleLabel: string
+  defaults: Pick<
+    CoverLetterData,
+    'yourName' | 'yourEmail' | 'yourPhone' | 'yourWebsite' | 'yourAddress'
+  >
   profileSrc: string
   profileAlt: string
   signatureSrc: string
   signatureAlt: string
-  defaults: Pick<CoverLetterData, 'yourName' | 'yourEmail' | 'yourPhone' | 'yourWebsite' | 'yourAddress'>
 }
 
 export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
@@ -31,65 +24,44 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
     id: 'queens',
     label: "Queen's University",
     description: "Queen's University styling preset",
-    accent: '#0f3d61',
-    accentLight: '#e5efff',
-    accentDark: '#0a2740',
-    tagline: 'Finance & Technology Professional',
-    organization: "Queen's University",
-    summary:
-      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
-    logoSrc: queensLogo,
-    logoAlt: "Queen's University crest",
+    contextLabel: "Queen's University · Smith School of Business",
+    titleLabel: 'Master of Finance Candidate, 2026-2027',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,
     signatureAlt: 'Handwritten signature of Tyler Bustard',
     defaults: {
       yourName: 'Tyler Bustard',
-      yourEmail: 'tyler@tylerbustard.net',
+      yourEmail: 'tyler@tylerbustard.com',
       yourPhone: '+1 (613) 985-1223',
-      yourWebsite: 'tylerbustard.net',
+      yourWebsite: 'tylerbustard.com',
       yourAddress: 'Toronto, Ontario',
     },
   },
   {
     id: 'unb',
     label: 'University of New Brunswick',
-    description: 'UNB finance & technology presentation',
-    accent: '#a3061a',
-    accentLight: '#fde2e4',
-    accentDark: '#7a0212',
-    tagline: 'Finance & Technology Professional',
-    organization: 'University of New Brunswick',
-    summary:
-      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
-    logoSrc: unbLogo,
-    logoAlt: 'University of New Brunswick crest',
+    description: 'UNB finance and technology preset',
+    contextLabel: 'University of New Brunswick · Bachelor of Business Administration in Finance; Class of 2020',
+    titleLabel: 'Finance & Technology',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,
     signatureAlt: 'Handwritten signature of Tyler Bustard',
     defaults: {
       yourName: 'Tyler Bustard',
-      yourEmail: 'tyler@tylerbustard.ca',
+      yourEmail: 'tyler@tylerbustard.com',
       yourPhone: '+1 (613) 985-1223',
-      yourWebsite: 'tylerbustard.ca',
+      yourWebsite: 'tylerbustard.com',
       yourAddress: 'Toronto, Ontario',
     },
   },
   {
     id: 'uoft',
     label: 'University of Toronto',
-    description: 'Rotman School professional aesthetic',
-    accent: '#1d4ed8',
-    accentLight: '#dbeafe',
-    accentDark: '#12397a',
-    tagline: 'Finance & Technology Professional',
-    organization: 'Rotman School of Management',
-    summary:
-      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
-    logoSrc: uoftLogo,
-    logoAlt: 'Rotman School of Management crest',
+    description: 'Rotman School of Management preset',
+    contextLabel: 'University of Toronto · Rotman School of Management',
+    titleLabel: 'Finance & Technology',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,
@@ -105,16 +77,9 @@ export const COVER_LETTER_VARIATIONS: VariationConfig[] = [
   {
     id: 'mcgill',
     label: 'McGill University',
-    description: 'Desautels finance leadership look',
-    accent: '#b5121b',
-    accentLight: '#fde4e6',
-    accentDark: '#7f0d14',
-    tagline: 'Finance & Technology Professional',
-    organization: 'McGill University',
-    summary:
-      'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.',
-    logoSrc: mcgillLogo,
-    logoAlt: 'McGill University crest',
+    description: 'McGill Desautels preset',
+    contextLabel: 'McGill University · Desautels Faculty of Management',
+    titleLabel: 'Finance & Technology',
     profileSrc: profileImage,
     profileAlt: 'Tyler Bustard portrait',
     signatureSrc: signatureImage,

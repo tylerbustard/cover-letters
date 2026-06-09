@@ -1,12 +1,20 @@
 import { assets } from './assets'
-import type { ResumeTemplate, ResumeExperienceItem, ResumeExperienceGroup, ResumeLeadershipGroup } from '@/types'
+import type {
+  ResumeCertificationArea,
+  ResumeExperienceGroup,
+  ResumeExperienceItem,
+  ResumeLeadershipGroup,
+  ResumeTemplate,
+} from '@/types'
+
+const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 const baseSummary =
-  'Driving innovation at the intersection of finance and technology while delivering exceptional results through analytical expertise, strategic thinking, and client-focused solutions.'
+  'Finance and technology professional with experience across portfolio monitoring, financial analysis, reconciliation, and data-driven reporting, combining analytical execution, strategic judgment, and client-focused communication.'
 
 const baseHeader = (email: string, website: string) => ({
   name: 'Tyler Bustard',
-  title: 'Finance & Technology Professional',
+  title: 'Finance & Technology',
   summary: baseSummary,
   profileSrc: assets.profileTyler,
   profileAlt: 'Tyler Bustard portrait',
@@ -20,17 +28,45 @@ const baseHeader = (email: string, website: string) => ({
 
 const createUnbEducation = () => ({
   id: 'education-unb',
-  degree: 'Bachelor of Business Administration',
-  program: 'Major in Finance',
+  degree: 'Bachelor of Business Administration, Finance',
+  program: 'Saint John, NB',
   school: 'University of New Brunswick',
   date: '2016-2020',
   bullets: [
-    'Analyst and Portfolio Manager - University of New Brunswick Student Investment Fund',
-    'Member of UNB Finance Club, Royal Bank of Canada Student Ambassador, Accredited Co-op Program',
-    'Recipient of 5 Scholarship for academic merit and leadership skills, Total $47,500',
+    'Student Investment Fund Analyst and Portfolio Manager, 5 Academic Awards ($47,500 in scholarships)',
+    'UNB Finance Club, RBC Student Ambassador, Accredited Co-op Program',
+    'RBC Student Ambassador of the Month, February 2020',
   ],
   logoSrc: assets.logoUnbFull,
   logoAlt: 'University of New Brunswick',
+})
+
+const createQueensEducation = () => ({
+  id: 'education-queens-mfin',
+  degree: 'Master of Finance Candidate',
+  program: 'Smith School of Business',
+  school: "Queen's University",
+  date: '2026-2027',
+  bullets: [
+    'Graduate finance candidacy aligned with investment analysis, capital markets, risk, and portfolio decision-making',
+    'Professional focus on Canadian finance, banking, and investment operations',
+  ],
+  logoSrc: assets.logoQueensAlt,
+  logoAlt: "Queen's University",
+})
+
+export const createNccEducation = () => ({
+  id: 'education-northeast-christian-college',
+  degree: 'Theology Program',
+  program: 'Fredericton, NB',
+  school: 'Northeast Christian College',
+  date: '2014-2015',
+  bullets: [
+    'Major in Theology with coursework across Bible, ministry, leadership, communication, ethics, and practical skills',
+    'Campus and ministry exposure included weekend ministry, chapel service, student council, social committees, and annual benefit concert pathways',
+  ],
+  logoSrc: assets.logoNcc,
+  logoAlt: 'Northeast Christian College',
 })
 
 const createStringsExperience = (): ResumeExperienceItem => ({
@@ -38,20 +74,20 @@ const createStringsExperience = (): ResumeExperienceItem => ({
   role: 'Senior Associate, Portfolio Monitoring',
   company: '73 Strings',
   location: 'Toronto, ON',
-  date: '2025-Present',
+  date: 'Jan 2025 - May 2026',
   bullets: [
-    'Monitor daily NAV inputs, validate holdings and cash flows; support accurate fund valuations',
-    'Review reconciliation workflows, investigate exceptions, and liaise with operations risk and PMs',
+    'Monitored daily NAV inputs and validated holdings and cash flows, which supported accurate fund valuations across 15+ portfolios',
+    'Reviewed reconciliation workflows and investigated exceptions, reducing resolution time by 18% through streamlined communication with operations risk and portfolio managers',
   ],
-  skills: ['Monitoring Controls', 'Reconciliation', 'NAV Validation', 'SQL', 'Excel'],
+  skills: ['Portfolio Monitoring', 'Reconciliation', 'NAV Validation', 'SQL', 'Excel'],
   logoSrc: assets.logo73Strings,
   logoAlt: '73 Strings',
 })
 
-const createFiscalExperience = (): ResumeExperienceItem => ({
-  id: 'experience-fiscal',
+const createRoiExperience = (): ResumeExperienceItem => ({
+  id: 'experience-roi',
   role: 'Equity Analyst',
-  company: 'Fiscal.ai',
+  company: 'ROI',
   location: 'Toronto, ON',
   date: '2023-2025',
   bullets: [
@@ -59,8 +95,8 @@ const createFiscalExperience = (): ResumeExperienceItem => ({
     'Collaborated with product and engineering to implement AI-driven data features, boosting adoption by 12%',
   ],
   skills: ['Financial Analysis', 'AI Integration', 'Data Analytics', 'Python', 'SQL'],
-  logoSrc: assets.logoFiscalAi,
-  logoAlt: 'Fiscal.ai',
+  logoSrc: assets.logoRoi,
+  logoAlt: 'ROI',
 })
 
 const createBmoExperience = (date: string): ResumeExperienceItem => ({
@@ -70,7 +106,7 @@ const createBmoExperience = (date: string): ResumeExperienceItem => ({
   location: 'Toronto, ON',
   date,
   bullets: [
-    'Advised Investment Counsellors managing $100M+ AUM, reducing preparation time by 12%',
+    'Advised two Investment Counsellors managing portfolios over $100M and cut preparation time by 12%',
     'Bolstered client communications, boosting response rates by 9%, heightening client satisfaction and retention',
   ],
   skills: ['Portfolio Management', 'Client Relations', 'Financial Analysis', 'Excel'],
@@ -114,22 +150,13 @@ const createRbcInternExperience = (): ResumeExperienceItem => ({
   company: 'Royal Bank of Canada',
   location: 'Fredericton, NB',
   date: '2019-2020',
-  bullets: [],
-  skills: [],
+  bullets: [
+    'Resolved complex client issues, achieving a 15% boost in positive feedback scores for the branch',
+    "Promoted RBC's digital banking tools, leading to a 10% increase in online and mobile banking adoption",
+  ],
+  skills: ['Client Service', 'Digital Banking', 'Problem Resolution', 'Customer Support'],
   logoSrc: assets.logoRbc,
   logoAlt: 'Royal Bank of Canada',
-})
-
-const createIrvingExperience = (): ResumeExperienceItem => ({
-  id: 'experience-irving',
-  role: 'Marketing Intern',
-  company: 'Irving Oil Limited',
-  location: 'Saint John, NB',
-  date: '2018',
-  bullets: [],
-  skills: [],
-  logoSrc: assets.logoIrving,
-  logoAlt: 'Irving Oil',
 })
 
 const createGrantExperience = (): ResumeExperienceItem => ({
@@ -138,96 +165,222 @@ const createGrantExperience = (): ResumeExperienceItem => ({
   company: 'Grant Thornton LLP',
   location: 'Saint John, NB',
   date: '2018',
-  bullets: [],
-  skills: [],
+  bullets: [
+    'Streamlined client financial data, boosting accuracy by 10% ensuring timely submission of 100+ tax returns',
+    'Improved tax return preparation processes, cutting filing errors by 15%',
+  ],
+  skills: ['Tax Preparation', 'Financial Analysis', 'Data Management', 'Client Service'],
   logoSrc: assets.logoGrantThornton,
   logoAlt: 'Grant Thornton',
 })
 
-const baseCertifications = () => ({
-  featured: [
-    {
-      id: 'cert-cfa',
-      title: 'CFA Level I Candidate',
-      organization: 'CFA Institute',
-      detail: 'Investment Analysis & Ethics',
-      date: '2026',
-      logoSrc: assets.logoCfa,
-      logoAlt: 'CFA Institute',
-    },
-    {
-      id: 'cert-gre',
-      title: 'GRE General Test',
-      organization: 'Educational Testing Service',
-      detail: 'Score: 325 (Q: 165, V: 160)',
-      date: '2024',
-      logoSrc: assets.logoEts,
-      logoAlt: 'Educational Testing Service',
-    },
-  ],
-  stats: [
-    {
-      id: 'cert-stat-finance',
-      label: 'Finance Certifications',
-      count: '10',
-      logos: [
-        { src: assets.logoCsi, alt: 'CSI' },
-        { src: assets.logoTrainingTheStreet, alt: 'Training The Street' },
-        { src: assets.logoBloomberg, alt: 'Bloomberg' },
-        { src: assets.logoMcgillAlt, alt: 'McGill University' },
-      ],
-    },
-    {
-      id: 'cert-stat-tech',
-      label: 'Technology Certifications',
-      count: '6',
-      logos: [{ src: assets.logoCoursera, alt: 'Coursera' }],
-    },
-    {
-      id: 'cert-stat-analytics',
-      label: 'Analytics Certifications',
-      count: '5',
-      logos: [{ src: assets.logoCoursera, alt: 'Coursera' }],
-    },
-  ],
-})
-
-const createLeadershipGroups = (): ResumeLeadershipGroup[] => [
+const createCertificationAreas = (): ResumeCertificationArea[] => [
   {
-    id: 'leadership-primary',
-    layout: 'stack',
+    id: 'cert-investment-markets',
+    title: 'Investment & Markets',
+    caption: 'CFA, valuation, and market fluency',
+    column: 'left',
     items: [
       {
-        id: 'leadership-united-way',
-        role: 'Next Gen Ambassador',
-        organization: 'United Way',
-        location: 'Toronto, ON',
-        date: '2020-Present',
-        logoSrc: assets.logoUnitedWay,
-        logoAlt: 'United Way',
+        id: 'cert-cfa',
+        name: 'CFA Level I Candidate',
+        issuer: 'CFA Institute',
+        year: '2026',
+        logoSrc: assets.logoCfa,
+        logoAlt: 'CFA Institute',
+        emphasis: true,
+      },
+      {
+        id: 'cert-tts',
+        name: 'Discounted Cash Flow Analysis and Modeling',
+        issuer: 'Training The Street',
+        year: '2024',
+        logoSrc: assets.logoTrainingTheStreet,
+        logoAlt: 'Training The Street',
+      },
+      {
+        id: 'cert-wall-street-prep',
+        name: 'Financial & Valuation Modeling',
+        issuer: 'Wall Street Prep',
+        year: '2020',
+        logoSrc: assets.logoWallStreetPrep,
+        logoAlt: 'Wall Street Prep',
+      },
+      {
+        id: 'cert-bloomberg',
+        name: 'Bloomberg Market Concepts Certificate',
+        issuer: 'Bloomberg',
+        year: '2020',
+        logoSrc: assets.logoBloomberg,
+        logoAlt: 'Bloomberg',
       },
     ],
   },
   {
-    id: 'leadership-secondary',
-    layout: 'grid',
-    columns: 2,
+    id: 'cert-advisory',
+    title: 'Advisory & Wealth Planning',
+    caption: 'Licensing, suitability, and client advice',
+    column: 'right',
     items: [
       {
-        id: 'leadership-rbc',
+        id: 'cert-planning',
+        name: 'Financial Planning 1',
+        issuer: 'Canadian Securities Institute',
+        year: '2023',
+        logoSrc: assets.logoCsi,
+        logoAlt: 'Canadian Securities Institute',
+      },
+      {
+        id: 'cert-advice',
+        name: 'Certificate in Financial Services Advice',
+        issuer: 'Canadian Securities Institute',
+        year: '2022',
+        logoSrc: assets.logoCsi,
+        logoAlt: 'Canadian Securities Institute',
+      },
+      {
+        id: 'cert-csc',
+        name: 'Canadian Securities Course',
+        issuer: 'Canadian Securities Institute',
+        year: '2021',
+        logoSrc: assets.logoCsi,
+        logoAlt: 'Canadian Securities Institute',
+      },
+      {
+        id: 'cert-pfsa',
+        name: 'Personal Financial Service Advice',
+        issuer: 'Canadian Securities Institute',
+        year: '2021',
+        logoSrc: assets.logoCsi,
+        logoAlt: 'Canadian Securities Institute',
+      },
+      {
+        id: 'cert-mutual-funds',
+        name: 'Investment Funds in Canada',
+        issuer: 'Canadian Securities Institute',
+        year: '2020',
+        logoSrc: assets.logoCsi,
+        logoAlt: 'Canadian Securities Institute',
+      },
+    ],
+  },
+  {
+    id: 'cert-data-bi',
+    title: 'Data & Business Intelligence',
+    caption: 'Analytics, visualization, and automation',
+    column: 'left',
+    items: [
+      {
+        id: 'cert-data-analytics',
+        name: 'Google Data Analytics Professional Certificate',
+        issuer: 'Google',
+        year: '2023',
+        logoSrc: assets.logoCoursera,
+        logoAlt: 'Coursera',
+      },
+      {
+        id: 'cert-python',
+        name: 'Python for Everybody Specialization',
+        issuer: 'University of Michigan',
+        year: '2023',
+        logoSrc: assets.logoCoursera,
+        logoAlt: 'Coursera',
+      },
+      {
+        id: 'cert-sql',
+        name: 'SQL for Data Science',
+        issuer: 'UC Davis',
+        year: '2020',
+        logoSrc: assets.logoCoursera,
+        logoAlt: 'Coursera',
+      },
+    ],
+  },
+  {
+    id: 'cert-quantitative',
+    title: 'Quantitative & Statistical Methods',
+    caption: 'Modeling, inference, and mathematical foundations',
+    column: 'right',
+    items: [
+      {
+        id: 'cert-machine-learning',
+        name: 'Machine Learning',
+        issuer: 'Stanford University',
+        year: '2020',
+        logoSrc: assets.logoCoursera,
+        logoAlt: 'Coursera',
+      },
+      {
+        id: 'cert-econometrics',
+        name: 'Econometrics: Methods & Applications',
+        issuer: 'Erasmus University',
+        year: '2024',
+        logoSrc: assets.logoCoursera,
+        logoAlt: 'Coursera',
+      },
+    ],
+  },
+  {
+    id: 'cert-graduate-admissions',
+    title: 'Graduate Admissions',
+    caption: 'Standardized assessment',
+    column: 'left',
+    items: [
+      {
+        id: 'cert-gre',
+        name: 'GRE General Test',
+        issuer: 'ETS',
+        year: '2024',
+        logoSrc: assets.logoEts,
+        logoAlt: 'ETS',
+        detail: 'Score: 325',
+        emphasis: true,
+      },
+    ],
+  },
+]
+
+const createLeadershipGroups = (): ResumeLeadershipGroup[] => [
+  {
+    id: 'community-primary',
+    layout: 'stack',
+    items: [
+      {
+        id: 'community-united-way',
+        role: 'Next Gen Ambassador',
+        organization: 'United Way',
+        location: 'Toronto, ON',
+        date: '2020-Present',
+        bullets: [
+          'Led implementation of fundraising strategies achieving 20% increase in funds raised over three years',
+        ],
+        skills: ['Fundraising', 'Community Engagement', 'Event Planning'],
+        logoSrc: assets.logoUnitedWay,
+        logoAlt: 'United Way',
+      },
+      {
+        id: 'community-rbc',
         role: 'Student Ambassador',
         organization: 'Royal Bank of Canada',
         location: 'Fredericton, NB',
         date: '2019-2020',
+        bullets: [
+          'Organized and executed campus-wide events resulting in 25% increase in student engagement and awareness',
+        ],
+        skills: ['Campus Outreach', 'Event Coordination', 'Brand Representation'],
         logoSrc: assets.logoRbc,
         logoAlt: 'Royal Bank of Canada',
       },
       {
-        id: 'leadership-irving',
+        id: 'community-irving',
         role: 'Volunteer Staff',
         organization: 'Irving Oil Limited',
         location: 'Saint John, NB',
         date: '2018',
+        bullets: [
+          'Successfully organized and executed engaging activities for over 100 children ensuring safe and enjoyable experience',
+        ],
+        skills: ['Volunteer Leadership', 'Event Support', 'Teamwork'],
         logoSrc: assets.logoIrving,
         logoAlt: 'Irving Oil',
       },
@@ -238,28 +391,22 @@ const createLeadershipGroups = (): ResumeLeadershipGroup[] => [
 const buildExperienceGroups = (hasFiscal: boolean, bmoDate: string) => {
   const primary: ResumeExperienceItem[] = [createStringsExperience()]
   if (hasFiscal) {
-    primary.push(createFiscalExperience())
+    primary.push(createRoiExperience())
   }
   primary.push(createBmoExperience(bmoDate))
 
   const groups: ResumeExperienceGroup[] = [
     {
-      id: 'experience-early',
+      id: 'experience-early-career',
       title: 'Early Career Experience',
       layout: 'stack',
       items: [createTdExperience(), createRbcAdvisorExperience()],
     },
     {
-      id: 'experience-coop',
+      id: 'experience-co-op',
       title: 'Co-op Experience',
       layout: 'stack',
-      items: [createRbcInternExperience()],
-    },
-    {
-      id: 'experience-coop-secondary',
-      layout: 'grid',
-      columns: 2,
-      items: [createIrvingExperience(), createGrantExperience()],
+      items: [createRbcInternExperience(), createGrantExperience()],
     },
   ]
 
@@ -270,63 +417,34 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
   {
     id: 'unb',
     label: 'UNB Resume',
-    description: 'University of New Brunswick resume layout',
-    theme: {
-      accent: '#a3061a',
-      accentSoft: '#fde2e4',
-      accentDark: '#7a0212',
-    },
+    description: 'University of New Brunswick content preset aligned to TylerBustard.com.',
     data: {
-      header: baseHeader('tyler@tylerbustard.ca', 'tylerbustard.ca'),
-      education: [createUnbEducation()],
-      experience: buildExperienceGroups(false, '2022-2025'),
-      certifications: baseCertifications(),
+      header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
+      education: [createUnbEducation(), createNccEducation()],
+      experience: buildExperienceGroups(true, '2022-2023'),
+      certifications: { areas: clone(createCertificationAreas()) },
       leadership: createLeadershipGroups(),
     },
   },
   {
     id: 'queens',
     label: "Queen's Resume",
-    description: "Queen's University focus with Smith School entry",
-    theme: {
-      accent: '#0f3d61',
-      accentSoft: '#e5efff',
-      accentDark: '#0a2740',
-    },
+    description: "Queen's MFin 2026-2027 package aligned to TylerBustard.com.",
     data: {
-      header: baseHeader('tyler@tylerbustard.net', 'tylerbustard.net'),
+      header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
       education: [
-        {
-          id: 'education-queens',
-          degree: 'Master of Finance Candidate',
-          program: 'Smith School of Business',
-          school: "Queen's University",
-          date: '2025-2027',
-          bullets: [
-            'Case Competitions: CFA Research Challenge and Investment Banking Competition',
-            "Analyst - Financial sector - Queen's University Alternative Assets Fund (QUAAF)",
-            'Member of Finance Club, Case Competition Union and Investment-Banking Clubs',
-            "Dean's Entrance Scholarship Award, Total $5,000",
-          ],
-          logoSrc: assets.logoQueensAlt,
-          logoAlt: "Queen's University",
-        },
+        createQueensEducation(),
         createUnbEducation(),
       ],
       experience: buildExperienceGroups(true, '2022-2023'),
-      certifications: baseCertifications(),
+      certifications: { areas: clone(createCertificationAreas()) },
       leadership: createLeadershipGroups(),
     },
   },
   {
     id: 'mcgill',
     label: 'McGill Resume',
-    description: 'McGill Desautels resume variant',
-    theme: {
-      accent: '#b5121b',
-      accentSoft: '#fde4e6',
-      accentDark: '#7f0d14',
-    },
+    description: 'McGill content preset in the unified studio style.',
     data: {
       header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
       education: [
@@ -335,31 +453,26 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
           degree: 'Master of Management in Finance Candidate',
           program: 'Desautels Faculty of Management',
           school: 'McGill University',
-          date: '2025-2026',
+          date: '2025-2027',
           bullets: [
-            'Head of Risk Management - Desautels Capital Management Fund',
-            'Chief Sustainability Officer - DCM Socially Responsible Investing Fund',
-            'Recipient of 2 Scholarships for academic merit and leadership skills, Total $13,000',
+            'Head of Risk Management for the Desautels Capital Management Fund and Chief Sustainability Officer for the SRI fund.',
+            'Recipient of two scholarships recognizing academic performance and leadership, totaling $13,000.',
           ],
           logoSrc: assets.logoMcgillAlt,
           logoAlt: 'McGill University',
         },
         createUnbEducation(),
+        createNccEducation(),
       ],
       experience: buildExperienceGroups(true, '2022-2023'),
-      certifications: baseCertifications(),
+      certifications: { areas: clone(createCertificationAreas()) },
       leadership: createLeadershipGroups(),
     },
   },
   {
     id: 'rotman',
     label: 'Rotman Resume',
-    description: 'University of Toronto Rotman layout',
-    theme: {
-      accent: '#1d4ed8',
-      accentSoft: '#dbeafe',
-      accentDark: '#12397a',
-    },
+    description: 'Rotman content preset in the unified studio style.',
     data: {
       header: baseHeader('tyler@tylerbustard.info', 'tylerbustard.info'),
       education: [
@@ -370,17 +483,18 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
           school: 'University of Toronto',
           date: '2025-2026',
           bullets: [
-            'Analyst, Financials and Real Estate sectors - Rotman Student Investment Fund',
-            'Case Competitions: 1st Place (CIBC), 3rd Place (TD), RBC and SLC participant',
-            'Entrance Scholarship and Emerging Canadian Leadership Award - Total $25,000',
+            'Analyst for the Rotman Student Investment Fund with financials and real estate coverage.',
+            'Participant in RBC, TD, and CIBC case competitions with placements across multiple events.',
+            'Recipient of the Entrance Scholarship and Emerging Canadian Leadership Award totaling $25,000.',
           ],
           logoSrc: assets.logoRotman,
           logoAlt: 'Rotman School of Management',
         },
         createUnbEducation(),
+        createNccEducation(),
       ],
       experience: buildExperienceGroups(false, '2022-2023'),
-      certifications: baseCertifications(),
+      certifications: { areas: clone(createCertificationAreas()) },
       leadership: createLeadershipGroups(),
     },
   },

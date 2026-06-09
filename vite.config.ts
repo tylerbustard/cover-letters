@@ -7,7 +7,6 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig({
-  base: './',
   plugins: [react()],
   resolve: {
     alias: {
@@ -17,8 +16,5 @@ export default defineConfig({
   server: {
     port: parseInt(process.env.PORT || '5005'),
     strictPort: true,
-    // Allow accessing the dev server via custom local hostnames like
-    // http://cover-letters.localhost:5005 without Vite blocking the Host header.
-    allowedHosts: true,
   },
 })

@@ -1,31 +1,14 @@
 export type DocumentType = 'resume' | 'cover-letter' | 'email-signature'
-export type ExportDocumentType = 'resume' | 'cover-letter' | 'signature'
 
-export type SeedCoverLetterId = 'queens' | 'unb' | 'uoft' | 'mcgill'
-export type SeedResumeId = 'unb' | 'queens' | 'mcgill' | 'rotman'
-export type SeedSignatureId = 'unb' | 'queens' | 'mcgill' | 'rotman' | 'strings'
-export type VariationId = SeedCoverLetterId
-export type CoverLetterId = string
-export type ResumeId = string
-export type SignatureId = string
-export type ThemePackId = 'unb' | 'queens' | 'mcgill' | 'rotman' | 'strings'
-export type FieldScope = 'shared only' | 'theme pack or document' | 'document only'
-export type FieldSource = 'Shared' | 'Theme Pack' | 'This Document'
-export type PresentationDensity = 'comfortable' | 'compact'
-export type PresentationContactLayout = 'single-line' | 'wrap'
-export type PreviewMode = 'screen' | 'print'
-export type SignatureExportVariant = 'standard' | 'gmail' | 'outlook'
-export type DocumentHealthStatus = 'Ready' | 'Needs Attention' | 'Blocked'
-export type DocumentValidationSeverity = 'attention' | 'blocked'
-export type DocumentLayoutMode = 'screen' | 'print'
-export type ExportBalancePreset = 'relaxed' | 'balanced' | 'compact'
-export type ExportBreakAnchor =
-  | 'none'
-  | 'co-op-experience'
-  | 'professional-certifications'
-  | 'co-op-and-professional-certifications'
-export type ExportRenderMode = 'review' | 'capture'
-export type ExportBalanceMode = 'auto' | 'locked'
+export type CoverLetterId = 'queens' | 'unb' | 'uoft' | 'mcgill'
+export type VariationId = CoverLetterId
+export type ResumeId = 'unb' | 'queens' | 'mcgill' | 'rotman'
+export type SignatureId = 'unb' | 'queens' | 'mcgill' | 'rotman' | 'strings'
+
+export interface LogoAsset {
+  src: string
+  alt: string
+}
 
 export interface CoverLetterData {
   companyName: string
@@ -43,26 +26,24 @@ export interface CoverLetterData {
   bodyParagraph2: string
   bodyParagraph3: string
   closingParagraph: string
+  signoffLabel: string
+}
+
+export interface CoverLetterConfig {
+  presetLabel: string
+  tagline: string
+  contextNote: string
+  profileSrc: string
+  profileAlt: string
+  signatureSrc: string
+  signatureAlt: string
 }
 
 export interface CoverLetterTemplate {
   id: CoverLetterId
   label: string
   description: string
-  config: {
-    accent: string
-    accentLight: string
-    accentDark: string
-    tagline: string
-    organization: string
-    summary: string
-    logoSrc: string
-    logoAlt: string
-    profileSrc: string
-    profileAlt: string
-    signatureSrc: string
-    signatureAlt: string
-  }
+  config: CoverLetterConfig
   data: CoverLetterData
 }
 
@@ -115,19 +96,23 @@ export interface ResumeExperienceGroup {
 
 export interface ResumeCertificationItem {
   id: string
-  title: string
-  organization: string
-  detail: string
-  date: string
+  name: string
+  issuer: string
+  year: string
   logoSrc: string
   logoAlt: string
+  detail?: string
+  emphasis?: boolean
 }
 
-export interface ResumeCertificationStat {
+export interface ResumeCertificationArea {
   id: string
-  label: string
-  count: string
-  logos: { src: string; alt: string }[]
+  title: string
+  caption: string
+  column?: 'left' | 'right'
+  items: ResumeCertificationItem[]
+  summaryValue?: string
+  summaryLogos?: LogoAsset[]
 }
 
 export interface ResumeLeadershipItem {
@@ -136,6 +121,8 @@ export interface ResumeLeadershipItem {
   organization: string
   location: string
   date: string
+  bullets: string[]
+  skills: string[]
   logoSrc: string
   logoAlt: string
 }
@@ -156,23 +143,15 @@ export interface ResumeData {
     groups: ResumeExperienceGroup[]
   }
   certifications: {
-    featured: ResumeCertificationItem[]
-    stats: ResumeCertificationStat[]
+    areas: ResumeCertificationArea[]
   }
   leadership: ResumeLeadershipGroup[]
-}
-
-export interface ResumeTheme {
-  accent: string
-  accentSoft: string
-  accentDark: string
 }
 
 export interface ResumeTemplate {
   id: ResumeId
   label: string
   description: string
-  theme: ResumeTheme
   data: ResumeData
 }
 
@@ -180,236 +159,253 @@ export interface EmailSignatureData {
   name: string
   role: string
   organization?: string
+  affiliationLines?: string[]
   email: string
   website: string
   phone: string
   location?: string
   profileSrc: string
   profileAlt: string
-  logos: { src: string; alt: string }[]
+  experienceLogos: LogoAsset[]
+  educationLogos: LogoAsset[]
+  certificationLogos: LogoAsset[]
+  signoff?: string
+  logoTone?: 'monochrome' | 'original'
 }
 
 export interface EmailSignatureTemplate {
   id: SignatureId
   label: string
-  accent: string
-  accentSoft: string
-  accentDark: string
+  description: string
   data: EmailSignatureData
 }
 
-export interface SharedProfile {
-  fullName: string
-  phone: string
-  location: string
-  professionalHeadline: string
-  summary: string
-  profileSrc: string
-  profileAlt: string
-  signatureSrc: string
-  signatureAlt: string
+export interface StudioSession {
+  username: string
 }
 
-export interface AccentPalette {
-  accent: string
-  accentSoft: string
-  accentDark: string
+export interface StoredResumeState {
+  selectedId: ResumeId
+  templates: ResumeTemplate[]
 }
 
-export interface ThemePack {
-  id: ThemePackId
-  label: string
-  palette: AccentPalette
-  organization: string
-  primaryLogoSrc: string
-  primaryLogoAlt: string
-  defaultSubtitle?: string
-  defaultRoleTitle?: string
-  defaultEmail: string
-  defaultWebsite: string
+export interface StoredCoverLetterState {
+  selectedId: CoverLetterId
+  templates: CoverLetterTemplate[]
 }
 
-export interface ResumeDocumentOverrides {
-  roleTitle?: string
-  email?: string
-  website?: string
+export interface StoredSignatureState {
+  selectedId: SignatureId
+  templates: EmailSignatureTemplate[]
 }
 
-export interface ResumeDocumentContent {
-  education: ResumeEducationItem[]
-  experience: ResumeData['experience']
-  certifications: ResumeData['certifications']
-  leadership: ResumeLeadershipGroup[]
-}
+export type AiScope =
+  | 'schema:read'
+  | 'documents:read'
+  | 'drafts:write'
+  | 'drafts:read'
+  | 'drafts:apply'
+  | 'exports:write'
 
-export interface ResumeDocument {
-  id: ResumeId
-  label: string
-  themePackId: ThemePackId
-  meta: DocumentRecordMeta
-  content: ResumeDocumentContent
-  overrides: ResumeDocumentOverrides
-}
+export type EditableValueType =
+  | 'string'
+  | 'text'
+  | 'date'
+  | 'boolean'
+  | 'asset'
+  | 'assetList'
+  | 'stringList'
+  | 'number'
+  | 'metadata'
 
-export interface CoverLetterDocumentOverrides {
-  tagline?: string
-  organization?: string
-  email?: string
-  website?: string
-}
+export type AiOperationType =
+  | 'replaceField'
+  | 'addListItem'
+  | 'removeListItem'
+  | 'createEntry'
+  | 'deleteEntry'
 
-export interface CoverLetterDocumentContent {
-  companyName: string
-  position: string
-  hiringManager: string
-  date: string
-  companyAddress: string
-  openingParagraph: string
-  bodyParagraph1: string
-  bodyParagraph2: string
-  bodyParagraph3: string
-  closingParagraph: string
-}
-
-export interface CoverLetterDocument {
-  id: CoverLetterId
-  label: string
-  themePackId: ThemePackId
-  meta: DocumentRecordMeta
-  content: CoverLetterDocumentContent
-  overrides: CoverLetterDocumentOverrides
-}
-
-export interface SignatureDocumentOverrides {
-  roleTitle?: string
-  organization?: string
-  email?: string
-  website?: string
-}
-
-export interface SignatureDocumentContent {
-  logos: { src: string; alt: string }[]
-}
-
-export interface SignatureDocument {
-  id: SignatureId
-  label: string
-  themePackId: ThemePackId
-  meta: DocumentRecordMeta
-  content: SignatureDocumentContent
-  overrides: SignatureDocumentOverrides
-}
-
-export interface DocumentRecordMeta {
-  createdAt: string
-  updatedAt: string
-  archived: boolean
-}
-
-export interface StudioSelection {
+export interface EditableFieldDescriptor {
   documentType: DocumentType
-  activeResumeId: ResumeId
-  activeCoverLetterId: CoverLetterId
-  activeSignatureId: SignatureId
+  templateSection: string
+  sectionLabel: string
+  fieldLabel: string
+  fieldId: string
+  jsonPath: string
+  valueType: EditableValueType
+  allowedOps: AiOperationType[]
+  affectsOutput: boolean
+  locked: boolean
+  currentValue: unknown
+  assetSource?: 'portraits' | 'signatures' | 'logos'
+  assetOptions?: Array<{ label: string; value: string }>
 }
 
-export interface PresentationSettings {
-  density: PresentationDensity
-  showAvatar: boolean
-  contactLayout: PresentationContactLayout
+export interface EditableCollectionDescriptor {
+  documentType: DocumentType
+  templateSection: string
+  sectionLabel: string
+  collectionId: string
+  jsonPath: string
+  entryType: string
+  allowedOps: Extract<AiOperationType, 'createEntry' | 'deleteEntry'>[]
+  itemIds: string[]
 }
 
-export interface StudioUIState {
-  previewModeByType: Record<DocumentType, PreviewMode>
-  collapsedSections: string[]
-  showArchivedVariants: boolean
+export interface StudioEditSchemaFieldTemplate {
+  key: string
+  fieldLabel: string
+  valueType: EditableValueType
+  allowedOps: AiOperationType[]
+  affectsOutput: boolean
+  assetSource?: 'portraits' | 'signatures' | 'logos'
 }
 
-export interface ExportRequest {
-  type: ExportDocumentType
+export interface StudioEditSchemaSection {
   id: string
-  variant?: SignatureExportVariant
-  density?: PresentationDensity
-  contactLayout?: PresentationContactLayout
-  showAvatar?: boolean
-  render?: ExportRenderMode
-  balance?: ExportBalanceMode
-  preset?: ExportBalancePreset
-  breakAnchor?: ExportBreakAnchor
-  fontScale?: number
-  spaceScale?: number
-}
-
-export interface ResumeExportTuning {
-  preset: ExportBalancePreset
-  breakAnchor: ExportBreakAnchor
-  fontScale: number
-  spaceScale: number
-}
-
-export interface ExportBalanceResult {
-  preset: ExportBalancePreset
-  breakAnchor: ExportBreakAnchor
-  pageCount: number
-  page1Whitespace: number
-  page2Whitespace: number
-  page3Whitespace?: number
-  score: number
-}
-
-export interface ExportMetrics {
-  tuning: ResumeExportTuning
-  pageCount: number
-  pageWhitespace: number[]
-  overflow: boolean
-  orphanedHeadings: boolean
-  splitGroups: boolean
-  internalGapScore: number
-  score: number
-}
-
-export interface DocumentValidationIssue {
-  id: string
-  severity: DocumentValidationSeverity
   label: string
-  detail: string
+  description: string
 }
 
-export interface DocumentHealth {
-  status: DocumentHealthStatus
-  issues: DocumentValidationIssue[]
+export interface StudioEditSchemaCollectionTemplate {
+  id: string
+  sectionId: string
+  sectionLabel: string
+  entryType: string
+  allowedOps: Extract<AiOperationType, 'createEntry' | 'deleteEntry'>[]
 }
 
-export interface StudioState {
-  sharedProfile: SharedProfile
-  presentation: PresentationSettings
-  ui: StudioUIState
-  themePacks: ThemePack[]
-  resumeDocuments: ResumeDocument[]
-  coverLetterDocuments: CoverLetterDocument[]
-  signatureDocuments: SignatureDocument[]
-  selection: StudioSelection
+export interface StudioEditSchemaDocument {
+  displayName: string
+  sections: StudioEditSchemaSection[]
+  lockedRules: string[]
+  fieldTemplates: Record<string, StudioEditSchemaFieldTemplate[]>
+  collectionTemplates: StudioEditSchemaCollectionTemplate[]
 }
 
-export interface PersistenceEnvelope {
-  version: number
-  state: StudioState
+export interface StudioEditSchema {
+  schemaVersion: string
+  assetOptions: {
+    portraits: Array<{ label: string; value: string }>
+    signatures: Array<{ label: string; value: string }>
+    logos: Array<{ label: string; value: string }>
+  }
+  documents: Record<DocumentType, StudioEditSchemaDocument>
 }
 
-export interface ResolvedResumeView extends ResumeTemplate {
-  themePackId: ThemePackId
-  documentLabel: string
-  health: DocumentHealth
+export type AiOperation =
+  | {
+      op: 'replaceField'
+      fieldId: string
+      value: unknown
+    }
+  | {
+      op: 'addListItem'
+      fieldId: string
+      value: string
+    }
+  | {
+      op: 'removeListItem'
+      fieldId: string
+      value?: string
+      index?: number
+    }
+  | {
+      op: 'createEntry'
+      collectionId: string
+      value: Record<string, unknown>
+    }
+  | {
+      op: 'deleteEntry'
+      collectionId: string
+      entryId: string
+    }
+
+export interface AiDocumentSnapshot {
+  documentType: DocumentType
+  templateId: string
+  templateLabel: string
+  schemaVersion: string
+  baseHash: string
+  snapshot: Record<string, unknown>
+  fields: EditableFieldDescriptor[]
+  collections: EditableCollectionDescriptor[]
+  lockedRules: string[]
 }
 
-export interface ResolvedCoverLetterView extends CoverLetterTemplate {
-  themePackId: ThemePackId
-  documentLabel: string
-  health: DocumentHealth
+export interface AiDraftDiffItem {
+  op: AiOperationType
+  fieldId?: string
+  collectionId?: string
+  fieldLabel: string
+  jsonPath: string
+  before: unknown
+  after: unknown
 }
 
-export interface ResolvedSignatureView extends EmailSignatureTemplate {
-  themePackId: ThemePackId
-  documentLabel: string
-  health: DocumentHealth
+export interface AiJobMetadata {
+  jobId?: string
+  jobUrl?: string
+  company?: string
+  role?: string
+  packageId?: string
+}
+
+export interface AiDraft {
+  id: string
+  documentType: DocumentType
+  templateId: string
+  templateLabel: string
+  baseHash: string
+  projectedHash?: string
+  createdAt: string
+  createdBy: string
+  status: 'pending' | 'applied' | 'rejected'
+  jobContext?: string
+  notes?: string
+  jobMetadata?: AiJobMetadata
+  operations: AiOperation[]
+  diff: AiDraftDiffItem[]
+  fieldsTouched: string[]
+  appliedAt?: string
+  appliedBy?: string
+  rejectedAt?: string
+  rejectedBy?: string
+}
+
+export interface AiDraftReviewState {
+  documentType: DocumentType
+  templateId: string
+  pendingDrafts: AiDraft[]
+  latestAppliedAudit: {
+    draftId: string
+    appliedAt: string
+    appliedBy: string
+    fieldsTouched: string[]
+    jobContext?: string
+    notes?: string
+    jobMetadata?: AiJobMetadata
+  } | null
+}
+
+export interface AiServiceTokenClaims {
+  iss: string
+  aud: string
+  sub: string
+  scope: AiScope[]
+  iat: number
+  exp: number
+}
+
+export interface AiExportArtifact {
+  artifactId: string
+  documentType: DocumentType
+  templateId: string
+  contentType: string
+  downloadUrl: string
+  sha256: string
+  renderMode: 'canonical-file' | 'signature-html' | 'dynamic-print-route'
+  fileName?: string
+  printUrl?: string
+  jobMetadata?: AiJobMetadata
 }

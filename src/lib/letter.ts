@@ -17,13 +17,7 @@ export const getOpeningParagraph = (data: CoverLetterData) => {
     return data.openingParagraph.trim()
   }
 
-  const trimmedPosition = data.position.trim()
-  const trimmedCompany = data.companyName.trim()
-
-  const roleSegment = trimmedPosition ? `the ${trimmedPosition} position` : 'this opportunity'
-  const companySegment = trimmedCompany ? ` at ${trimmedCompany}` : ''
-
-  return `I am writing to express my strong interest in ${roleSegment}${companySegment}. With my background in finance and technology, I am excited about the opportunity to contribute to your team.`
+  return ''
 }
 
 export const getClosingParagraph = (data: CoverLetterData) => {
@@ -31,10 +25,7 @@ export const getClosingParagraph = (data: CoverLetterData) => {
     return data.closingParagraph.trim()
   }
 
-  const trimmedCompany = data.companyName.trim()
-  const companySegment = trimmedCompany ? ` to ${trimmedCompany}` : ''
-
-  return `I am eager to bring my skills and passion${companySegment} and would welcome the opportunity to discuss how my experience aligns with your needs. Thank you for considering my application.`
+  return ''
 }
 
 export const getBodyParagraphs = (data: CoverLetterData) =>
@@ -46,10 +37,14 @@ export const getLetterParagraphs = (data: CoverLetterData) => [
   getOpeningParagraph(data),
   ...getBodyParagraphs(data),
   getClosingParagraph(data),
-]
+].filter((paragraph): paragraph is string => paragraph.length > 0)
 
 export const getRecipientLines = (data: CoverLetterData) => {
   const lines: string[] = []
+
+  if (hasValue(data.hiringManager)) {
+    lines.push(data.hiringManager.trim())
+  }
 
   if (hasValue(data.companyName)) {
     lines.push(data.companyName.trim())
@@ -104,4 +99,3 @@ export const getOpportunitySummary = (data: CoverLetterData) => {
 
   return 'Opportunities in finance and technology'
 }
-
