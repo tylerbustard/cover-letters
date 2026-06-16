@@ -11,6 +11,7 @@
     "qa:print": "node scripts/qa-print-variations.mjs",
     "qa:static-pdf": "node scripts/qa-static-pdfs.mjs",
     "qa:ui": "node scripts/ui-smoke.mjs",
+    "qa:live:finchat": "node scripts/live-finchat-smoke.mjs",
     "pdf:seed": "node scripts/seed-and-print.mjs resume && node scripts/seed-and-print.mjs cover",
     "verify:automation": "node scripts/verify-automation-surfaces.mjs",
     "deploy:mcgill-production": "zsh scripts/deploy-mcgill-production.sh"

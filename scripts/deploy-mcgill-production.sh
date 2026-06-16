@@ -52,6 +52,42 @@ require_status() {
   fi
 }
 
+require_finchat_login() {
+  local url="$1"
+  node - "${url}" <<'NODE'
+import { readFileSync } from 'node:fs'
+
+const [url] = process.argv.slice(2)
+const env = Object.fromEntries(
+  readFileSync('.env', 'utf8')
+    .split('\n')
+    .filter((line) => line.includes('='))
+    .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
+)
+
+const response = await fetch(url, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({
+    username: env.ADMIN_USERNAME,
+    password: env.ADMIN_PASSWORD,
+  }),
+})
+
+let payload = {}
+try {
+  payload = await response.json()
+} catch {}
+
+if (!response.ok || !payload?.session) {
+  console.error(`Acceptance failed: FinChat live login returned HTTP ${response.status}.`)
+  process.exit(1)
+}
+
+console.log('FinChat live login verified.')
+NODE
+}
+
 require_cmd curl
 require_cmd git
 require_cmd grep
@@ -210,14 +246,19 @@ echo "Waiting briefly for Netlify edge propagation..."
 sleep 15
 
 echo "Checking live FinChat bundle..."
+cd "${FINCHAT_REPO}"
 require_status "https://finchat.ca/?v=$(date +%s)" "200" "FinChat home"
 require_status "https://finchat.ca/sign-in?v=$(date +%s)" "200" "FinChat sign-in route"
 require_status "https://finchat.ca/studio/email-signature?v=$(date +%s)" "200" "FinChat signature studio route"
 require_status "https://finchat.ca/studio/resume?v=$(date +%s)" "200" "FinChat resume studio route"
 require_status "https://finchat.ca/studio/cover-letter?v=$(date +%s)" "200" "FinChat cover-letter studio route"
+require_status "https://finchat.ca/ai-assets/logos/unb-full.png?v=$(date +%s)" "200" "FinChat hosted UNB logo"
+require_status "https://finchat.ca/ai-assets/logos/queens-alt.png?v=$(date +%s)" "200" "FinChat hosted Queen's logo"
 require_status "https://finchat.ca/ai-assets/logos/mcgill.png?v=$(date +%s)" "200" "FinChat hosted McGill logo"
+require_status "https://finchat.ca/ai-assets/logos/rotman.png?v=$(date +%s)" "200" "FinChat hosted Rotman logo"
 finchat_session_json="$(curl -fsSL "https://finchat.ca/api/auth/session?v=$(date +%s)")"
 require_text "${finchat_session_json}" "session" "FinChat auth session function"
+require_finchat_login "https://finchat.ca/api/auth/login"
 finchat_html="$(curl -fsSL "https://finchat.ca/?v=$(date +%s)")"
 finchat_asset="$(rg -o '/assets/index-[^" ]+\.js' <<<"${finchat_html}" | head -n 1)"
 if [[ -z "${finchat_asset}" ]]; then
@@ -225,14 +266,23 @@ if [[ -z "${finchat_asset}" ]]; then
   exit 1
 fi
 finchat_js="$(curl -fsSL "https://finchat.ca${finchat_asset}")"
+require_text "${finchat_js}" "University of New Brunswick" "FinChat UNB school"
+require_text "${finchat_js}" "Bachelor of Business Administration in Finance; Class of 2020" "FinChat UNB degree"
+require_text "${finchat_js}" "Queen's University - Smith School of Business" "FinChat Queen's school"
+require_text "${finchat_js}" "Master of Finance Candidate, 2026-2027" "FinChat Queen's title"
 require_text "${finchat_js}" "McGill University - Desautels Faculty of Management" "FinChat McGill school"
 require_text "${finchat_js}" "Master of Business Administration Candidate, 2026-2027" "FinChat MBA title"
 require_text "${finchat_js}" "tyler@tylerbustard.net" "FinChat .net email"
+require_text "${finchat_js}" "University of Toronto - Rotman School of Management" "FinChat Rotman school"
+require_text "${finchat_js}" "Master of Business Administration Candidate, 2026" "FinChat Rotman title"
+require_text "${finchat_js}" "tyler@tylerbustard.info" "FinChat Rotman .info email"
 reject_text "${finchat_js}" "Master of Management in Finance" "old MMF wording"
 reject_text "${finchat_js}" "Peter Christoffersen" "unsupported award"
 reject_text "${finchat_js}" "\$13,000" "unsupported scholarship amount"
+npm run qa:live:finchat
 
 echo "Checking live tylerbustard.net bundle..."
+cd "${NET_REPO}"
 require_status "https://tylerbustard.net/?v=$(date +%s)" "200" "tylerbustard.net home"
 require_status "https://tylerbustard.net/resume?v=$(date +%s)" "200" "tylerbustard.net resume route"
 net_html="$(curl -fsSL "https://tylerbustard.net/?v=$(date +%s)")"

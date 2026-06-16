@@ -32,6 +32,9 @@ try {
   const mcgillResume = defaults.getDefaultResumeState().templates.find((template) => template.id === 'mcgill')
   const mcgillCoverLetter = defaults.getDefaultCoverLetterState().templates.find((template) => template.id === 'mcgill')
   const mcgillSignature = defaults.getDefaultSignatureState().templates.find((template) => template.id === 'mcgill')
+  const rotmanResume = defaults.getDefaultResumeState().templates.find((template) => template.id === 'rotman')
+  const rotmanCoverLetter = defaults.getDefaultCoverLetterState().templates.find((template) => template.id === 'uoft')
+  const rotmanSignature = defaults.getDefaultSignatureState().templates.find((template) => template.id === 'rotman')
 
   assert.ok(resume, 'UNB resume template is available')
   assert.ok(coverLetter, 'UNB cover letter template is available')
@@ -42,6 +45,9 @@ try {
   assert.ok(mcgillResume, 'McGill resume template is available')
   assert.ok(mcgillCoverLetter, 'McGill cover-letter template is available')
   assert.ok(mcgillSignature, 'McGill signature template is available')
+  assert.ok(rotmanResume, 'Rotman resume template is available')
+  assert.ok(rotmanCoverLetter, 'Rotman cover-letter template is available')
+  assert.ok(rotmanSignature, 'Rotman signature template is available')
 
   const resumeContext = buildDocumentContext('resume', resume)
   const coverLetterContext = buildDocumentContext('cover-letter', coverLetter)
@@ -97,6 +103,8 @@ try {
   )
   assert.equal(signature.data.signoff, 'Sincerely', 'UNB signature default signoff is Sincerely')
   assert.equal(queensSignature.data.signoff, 'Sincerely', "Queen's signature default signoff is Sincerely")
+  assert.equal(mcgillSignature.data.signoff, 'Sincerely', 'McGill signature default signoff is Sincerely')
+  assert.equal(rotmanSignature.data.signoff, 'Sincerely', 'Rotman signature default signoff is Sincerely')
   assert.deepEqual(
     sortValues(resumeUiFieldMap.fields.map((field) => field.fieldId)),
     sortValues(resumeContext.fields.map((field) => field.fieldId)),
@@ -218,6 +226,46 @@ try {
     mcgillSignature.data.email,
     'tyler@tylerbustard.net',
     'McGill signature uses the .net email identity',
+  )
+  assert.equal(
+    rotmanCoverLetter.config.credentialName,
+    'University of Toronto - Rotman School of Management',
+    'Rotman cover-letter header carries the full school line',
+  )
+  assert.equal(
+    rotmanCoverLetter.config.credentialDetail,
+    'Master of Business Administration Candidate, 2026',
+    'Rotman cover-letter header carries the MBA candidate line',
+  )
+  assert.equal(
+    rotmanCoverLetter.data.yourEmail,
+    'tyler@tylerbustard.info',
+    'Rotman cover-letter uses the .info email identity',
+  )
+  assert.deepEqual(
+    rotmanResume.data.education[0],
+    {
+      ...rotmanResume.data.education[0],
+      degree: 'Master of Business Administration',
+      program: 'Rotman School of Management',
+      school: 'University of Toronto',
+      date: '2025-2026',
+      logoAlt: 'Rotman School of Management',
+    },
+    'Rotman resume keeps the current school, program, and program year',
+  )
+  assert.deepEqual(
+    rotmanSignature.data.affiliationLines,
+    [
+      'University of Toronto - Rotman School of Management',
+      'Master of Business Administration Candidate, 2026',
+    ],
+    'Rotman signature stores school and MBA role on separate rows',
+  )
+  assert.equal(
+    rotmanSignature.data.email,
+    'tyler@tylerbustard.info',
+    'Rotman signature uses the .info email identity',
   )
   assert.deepEqual(
     sortValues(signatureUiFieldMap.fields.map((field) => field.fieldId)),
@@ -973,7 +1021,12 @@ try {
         signatureAffiliationLines: signatureResult.template.data.affiliationLines,
         queensSignatureAffiliation: queensSignature.data.affiliationLines,
         mcgillSignatureAffiliation: mcgillSignature.data.affiliationLines,
+        rotmanSignatureAffiliation: rotmanSignature.data.affiliationLines,
         queensCoverLetterTagline: queensCoverLetter.config.tagline,
+        rotmanCoverLetterCredential: [
+          rotmanCoverLetter.config.credentialName,
+          rotmanCoverLetter.config.credentialDetail,
+        ],
       },
       null,
       2,
