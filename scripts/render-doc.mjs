@@ -39,6 +39,15 @@ const runChild = (cmd, args, timeoutMs) =>
     })
   })
 
+const closeServer = async (server) => {
+  server.httpServer?.closeAllConnections?.()
+  server.httpServer?.closeIdleConnections?.()
+  await Promise.race([
+    server.close(),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ])
+}
+
 const [, , kindArg = 'cover', templateIdArg, outNameArg] = process.argv
 const kind = kindArg === 'resume' ? 'resume' : 'cover'
 const templateId = templateIdArg || (kind === 'resume' ? 'queens' : 'unb')
@@ -135,5 +144,5 @@ try {
     if (png.status !== 0) console.error('pdftoppm:', png.stderr)
   }
 } finally {
-  await server.close()
+  await closeServer(server)
 }

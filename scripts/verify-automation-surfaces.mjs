@@ -10,6 +10,15 @@ import {
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
 
+const closeServer = async (server) => {
+  server.httpServer?.closeAllConnections?.()
+  server.httpServer?.closeIdleConnections?.()
+  await Promise.race([
+    server.close(),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ])
+}
+
 try {
   const defaults = await server.ssrLoadModule('/src/lib/studio-defaults.ts')
   const fieldMapHelpers = await server.ssrLoadModule('/src/lib/studio-field-map.ts')
@@ -971,5 +980,5 @@ try {
     ),
   )
 } finally {
-  await server.close()
+  await closeServer(server)
 }

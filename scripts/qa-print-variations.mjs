@@ -31,6 +31,15 @@ const check = (name, ok, detail = '') => {
 const run = (command, args, options = {}) =>
   spawnSync(command, args, { encoding: 'utf8', ...options })
 
+const closeServer = async (server) => {
+  server.httpServer?.closeAllConnections?.()
+  server.httpServer?.closeIdleConnections?.()
+  await Promise.race([
+    server.close(),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ])
+}
+
 const requireCommand = (command) => {
   const result = run('sh', ['-lc', `command -v ${command}`])
   check(`${command} is available`, result.status === 0)
@@ -312,7 +321,7 @@ try {
   }
 } finally {
   await browser.close().catch(() => {})
-  await server.close()
+  await closeServer(server)
 }
 
 console.log('\nPrint QA artifacts:', OUT_DIR)

@@ -51,8 +51,18 @@ const runChild = (cmd, args, timeoutMs) =>
     child.on('error', (e) => { clearTimeout(timer); resolve(String(e)) })
   })
 
+const closeServer = async (server) => {
+  server.httpServer?.closeAllConnections?.()
+  server.httpServer?.closeIdleConnections?.()
+  await Promise.race([
+    server.close(),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ])
+}
+
 const server = await createServer({ root, logLevel: 'error', server: { host: '127.0.0.1', port: PORT, strictPort: true } })
 await server.listen()
+let exitCode = 1
 try {
   const defaults = await server.ssrLoadModule('/src/lib/studio-defaults.ts')
   const state = defaults[cfg.getState]()
@@ -100,6 +110,8 @@ try {
 
   const wrote = await fs.stat(outPath).then((s) => s.size > 0).catch(() => false)
   console.log(wrote ? `OK -> ${cfg.out}` : 'FAILED: no PDF written')
+  exitCode = wrote ? 0 : 1
 } finally {
-  await server.close()
+  await closeServer(server)
 }
+process.exit(exitCode)

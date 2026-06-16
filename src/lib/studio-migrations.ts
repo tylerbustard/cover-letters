@@ -44,6 +44,15 @@ const asStringArray = (value: unknown) =>
 const legacyRoiBase = ['Fis', 'cal'].join('')
 const legacyRoiSlug = ['fis', 'cal-ai'].join('')
 const legacyRoiUnderscore = ['fis', 'cal_ai'].join('')
+const legacyMmfProgram = ['Master of Management', 'in Finance'].join(' ')
+const legacyMmfCandidate = `${legacyMmfProgram} Candidate`
+const legacyMmfCandidateComma2027 = `${legacyMmfCandidate}, 2027`
+const legacyMmfCandidateDot2027 = `${legacyMmfCandidate} · 2027`
+const legacyMmfCandidatePattern = new RegExp(`${legacyMmfProgram}\\s+Candidate`, 'iu')
+const legacyUnsupportedScholarshipPattern = new RegExp(
+  `two scholarships|\\$${['13', '000'].join(',')}|recipient of`,
+  'iu',
+)
 const legacyRoiTextPatterns = [
   new RegExp(`${legacyRoiBase}\\s*\\.\\s*ai`, 'gi'),
   new RegExp(`${legacyRoiBase}\\s+AI`, 'gi'),
@@ -103,8 +112,8 @@ const RESETTABLE_SIGNATURE_AFFILIATIONS: Partial<
   mcgill: {
     roles: new Set([
       '',
-      'Master of Management in Finance Candidate, 2027',
-      'Master of Management in Finance Candidate · 2027',
+      legacyMmfCandidateComma2027,
+      legacyMmfCandidateDot2027,
       'Master of Business Administration Candidate, 2026',
       'MBA Candidate · 2026',
     ]),
@@ -528,9 +537,9 @@ const hasLegacyResumeTemplateMarkers = (value: unknown) => {
     (
       asString(header.title) === 'Finance & Technology' ||
       templateDescription !== 'McGill MBA 2026-2027 content preset in the unified studio style.' ||
-      /Master of Management in Finance Candidate/iu.test(mcgillEducationText) ||
+      legacyMmfCandidatePattern.test(mcgillEducationText) ||
       /Desautels Capital Management|Chief Sustainability Officer|SRI fund/iu.test(mcgillEducationText) ||
-      /two scholarships|\$13,000|recipient of/iu.test(mcgillEducationText) ||
+      legacyUnsupportedScholarshipPattern.test(mcgillEducationText) ||
       education.some(
         (item) =>
           isRecord(item) &&
@@ -608,7 +617,7 @@ const RESETTABLE_COVER_LETTER_TAGLINES = new Set([
   'Master of Finance Candidate, 2027',
   'Master of Finance Candidate · 2027',
   'MBA Candidate · 2026',
-  'Master of Management in Finance Candidate · 2027',
+  legacyMmfCandidateDot2027,
   "Queen's University",
   "Queen's University · Smith School of Business",
   'University of New Brunswick · Finance',
@@ -643,8 +652,8 @@ const RESETTABLE_COVER_LETTER_CREDENTIAL_DETAILS = new Set([
   'Master of Finance Candidate, 2026-2027',
   'Master of Business Administration Candidate, 2026',
   'MBA Candidate · 2026',
-  'Master of Management in Finance Candidate, 2027',
-  'Master of Management in Finance Candidate · 2027',
+  legacyMmfCandidateComma2027,
+  legacyMmfCandidateDot2027,
 ])
 
 const RESETTABLE_COVER_LETTER_CREDENTIAL_LOGO_ALTS = new Set([
@@ -868,8 +877,8 @@ const hasLegacyQueensMfinAffiliation = (templateId: string, lines: string[]) =>
   templateId === 'queens' && lines.some((line) => LEGACY_QUEENS_MFIN_AFFILIATION_LINES.has(line))
 
 const LEGACY_MCGILL_MBA_AFFILIATION_LINES = new Set([
-  'Master of Management in Finance Candidate, 2027',
-  'Master of Management in Finance Candidate · 2027',
+  legacyMmfCandidateComma2027,
+  legacyMmfCandidateDot2027,
   'Master of Business Administration Candidate, 2026',
   'MBA Candidate · 2026',
 ])

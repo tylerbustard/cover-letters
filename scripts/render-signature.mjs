@@ -32,6 +32,15 @@ const runChild = (cmd, args, timeoutMs) =>
     child.on('error', () => { clearTimeout(timer); resolve() })
   })
 
+const closeServer = async (server) => {
+  server.httpServer?.closeAllConnections?.()
+  server.httpServer?.closeIdleConnections?.()
+  await Promise.race([
+    server.close(),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ])
+}
+
 // Point hosted-asset URLs (icons + logos) at the local dev server so the export
 // renders without needing the not-yet-deployed finchat.ca assets.
 process.env.VITE_SIGNATURE_ASSET_ORIGIN = 'http://127.0.0.1:5014'
@@ -86,5 +95,5 @@ try {
   const ok = await fs.stat(shotPath).then((s) => s.size > 0).catch(() => false)
   console.log(ok ? `OK screenshot -> ${shotPath}` : 'screenshot FAILED')
 } finally {
-  await server.close()
+  await closeServer(server)
 }
