@@ -190,7 +190,7 @@ require_netlify_site "${FINCHAT_SITE_ID}" "FinChat" "finchat.ca"
 require_netlify_site "${NET_SITE_ID}" "tylerbustard.net" "tylerbustard.net"
 require_clean_git "${FINCHAT_REPO}" "FinChat"
 require_clean_git "${NET_REPO}" "tylerbustard.net"
-npm run verify
+npm run verify:production
 require_clean_git "${FINCHAT_REPO}" "FinChat after verification"
 npm exec -- netlify -- deploy \
   --prod \
