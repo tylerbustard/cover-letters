@@ -3,9 +3,17 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { connectLambda, getStore } from '@netlify/blobs'
 import { parse as parseCookie, serialize as serializeCookie } from 'cookie'
 
-const SESSION_COOKIE = '__studio_session'
+const SESSION_COOKIE = '__Host-studio_session'
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7
 const ROBOTS_HEADER = 'noindex, nofollow, noarchive, nosnippet'
+const SECURITY_HEADERS = {
+  'Content-Security-Policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Referrer-Policy': 'same-origin',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+}
 
 const json = (statusCode, body, extraHeaders = {}) => ({
   statusCode,
@@ -13,6 +21,7 @@ const json = (statusCode, body, extraHeaders = {}) => ({
     'Cache-Control': 'no-store',
     'Content-Type': 'application/json; charset=utf-8',
     'X-Robots-Tag': ROBOTS_HEADER,
+    ...SECURITY_HEADERS,
     ...extraHeaders,
   },
   body: JSON.stringify(body),
@@ -130,13 +139,13 @@ const clearCookie = () =>
     secure: true,
   })
 
-const getDocumentsStore = (event) => {
+const getNamedStore = (event, name) => {
   const apiToken = process.env.NETLIFY_API_TOKEN
   const siteID = process.env.NETLIFY_SITE_ID || process.env.SITE_ID
 
   if (apiToken && siteID) {
     return getStore({
-      name: 'private-documents',
+      name,
       siteID,
       token: apiToken,
       consistency: 'strong',
@@ -144,8 +153,10 @@ const getDocumentsStore = (event) => {
   }
 
   connectLambda(event)
-  return getStore('private-documents')
+  return getStore(name)
 }
+
+const getDocumentsStore = (event) => getNamedStore(event, 'private-documents')
 
 export {
   ROBOTS_HEADER,
@@ -155,6 +166,7 @@ export {
   encodeSession,
   getAuthConfig,
   getDocumentsStore,
+  getNamedStore,
   getSessionFromEvent,
   json,
   parseBody,

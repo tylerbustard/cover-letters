@@ -79,6 +79,31 @@ const waitForStatus = async (page, fragment) => {
   }
 }
 
+const runAuthRateLimitSmoke = async () => {
+  const isolatedIp = `203.0.113.${Math.floor(Math.random() * 200) + 1}`
+  const postLogin = () =>
+    fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': isolatedIp,
+      },
+      body: JSON.stringify({
+        username: env.ADMIN_USERNAME,
+        password: 'definitely-not-the-studio-password',
+      }),
+    })
+
+  let lastStatus = 0
+  for (let index = 0; index < 10; index += 1) {
+    const response = await postLogin()
+    lastStatus = response.status
+  }
+
+  const lockedResponse = await postLogin()
+  check('failed sign-ins trigger auth rate limiting', lastStatus === 401 && lockedResponse.status === 429)
+}
+
 // Clicking Export PDF opens a new tab; wait for it, let it render, and capture
 // the PDF exactly as the print dialog would produce it.
 const captureExportTab = async (browser, page, expectedUrlPart, outFile, readySelector) => {
@@ -318,6 +343,8 @@ try {
   await page.pdf({ path: `${OUT}/ui-export-signature.pdf`, printBackground: true, preferCSSPageSize: true })
 
   await page.screenshot({ path: `${OUT}/ui-final-state.png` })
+
+  await runAuthRateLimitSmoke()
 } finally {
   await browser.close()
 }

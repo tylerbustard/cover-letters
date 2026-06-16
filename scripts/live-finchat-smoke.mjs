@@ -51,6 +51,25 @@ const inspectPage = (page) =>
     }
   })
 
+const checkSecurityHeaders = async (path, label) => {
+  const response = await fetch(`${BASE}${path}?v=${Date.now()}`)
+  const headers = response.headers
+  const contentSecurityPolicy = headers.get('content-security-policy') ?? ''
+  const permissionsPolicy = headers.get('permissions-policy') ?? ''
+  const strictTransportSecurity = headers.get('strict-transport-security') ?? ''
+
+  check(`${label} returns HTTP 200`, response.status === 200, String(response.status))
+  check(
+    `${label} blocks framing`,
+    headers.get('x-frame-options') === 'DENY' &&
+      contentSecurityPolicy.includes("frame-ancestors 'none'"),
+  )
+  check(`${label} disables MIME sniffing`, headers.get('x-content-type-options') === 'nosniff')
+  check(`${label} keeps referrers same-origin`, headers.get('referrer-policy') === 'same-origin')
+  check(`${label} sends HSTS`, strictTransportSecurity.includes('max-age=31536000'))
+  check(`${label} limits sensitive browser permissions`, permissionsPolicy.includes('camera=()'))
+}
+
 const openStudioRoute = async (page, route, selector, expectedText) => {
   await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle2', timeout: 45000 })
   await page.waitForSelector(selector, { timeout: 30000 })
@@ -70,6 +89,10 @@ const openStudioRoute = async (page, route, selector, expectedText) => {
 check('Chrome executable is available', existsSync(CHROME), CHROME)
 check('ADMIN_USERNAME is configured', Boolean(env.ADMIN_USERNAME))
 check('ADMIN_PASSWORD is configured', Boolean(env.ADMIN_PASSWORD))
+if (failures.length > 0) process.exit(1)
+
+await checkSecurityHeaders('/sign-in', 'static app')
+await checkSecurityHeaders('/api/auth/session', 'API')
 if (failures.length > 0) process.exit(1)
 
 const browser = await puppeteer.launch({
