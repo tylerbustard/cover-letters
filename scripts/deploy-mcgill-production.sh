@@ -109,7 +109,11 @@ deploy_zip() {
 echo "Building and verifying FinChat..."
 cd "${FINCHAT_REPO}"
 npm run verify
-deploy_zip "${FINCHAT_SITE_ID}" "dist" "finchat-mcgill"
+npm exec --yes netlify -- deploy \
+  --prod \
+  --dir=dist \
+  --site="${FINCHAT_SITE_ID}" \
+  --message="Deploy McGill MBA studio package"
 
 echo "Building and verifying tylerbustard.net..."
 cd "${NET_REPO}"
