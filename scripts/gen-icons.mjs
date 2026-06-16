@@ -6,7 +6,10 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+const CHROME =
+  process.env.PUPPETEER_EXECUTABLE_PATH ||
+  process.env.CHROME_PATH ||
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const COLOR = '#64748b' // slate-500, matches signature/header contact text
 const RENDER = 64 // px (displayed ~13-16px; 4x for crispness)
 

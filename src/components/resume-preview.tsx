@@ -1,6 +1,6 @@
-import { Globe, Mail, MapPin, Phone } from 'lucide-react'
-import { Fragment, type CSSProperties, type ReactElement } from 'react'
+import { type CSSProperties } from 'react'
 
+import { DOCUMENT_HEADER_PRINT_CSS, DocumentHeader } from '@/components/document-header'
 import { resolveStudioAssetSrc } from '@/data/assets'
 import type {
   LogoAsset,
@@ -52,15 +52,6 @@ type ResumeEntryGroup = {
   layout: 'stack' | 'grid'
   columns?: number
   entries: ResumeEntry[]
-}
-
-type HeaderContactItem = {
-  key: string
-  value: string
-  icon: ReactElement
-  href?: string
-  ariaLabel?: string
-  external?: boolean
 }
 
 const normalizeGroupColumns = (value: unknown) => {
@@ -224,103 +215,22 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
     certificationAreas.filter((area) => (area.column ?? 'left') === 'right'),
   ]
 
-  const contactName = data.header.name.trim() || 'contact'
-  const contactEmail = data.header.contact.email.trim()
-  const contactPhone = data.header.contact.phone.trim()
-  const rawWebsite = data.header.contact.website.trim()
-  const websiteLabel = rawWebsite.replace(/^https?:\/\//u, '')
-  const websiteHref = rawWebsite.startsWith('http') ? rawWebsite : `https://${websiteLabel}`
-  const contactLocation = data.header.contact.location.trim()
-  const rawContactItems: Array<HeaderContactItem | null> = [
-    contactEmail
-      ? {
-          key: 'email',
-          value: contactEmail,
-          href: `mailto:${contactEmail}`,
-          ariaLabel: `Email ${contactName}`,
-          icon: <Mail size={13} />,
-        }
-      : null,
-    contactPhone
-      ? {
-          key: 'phone',
-          value: contactPhone,
-          href: `tel:${contactPhone.replace(/[^+\d]/gu, '')}`,
-          ariaLabel: `Call ${contactName}`,
-          icon: <Phone size={13} />,
-        }
-      : null,
-    websiteLabel
-      ? {
-          key: 'website',
-          value: websiteLabel,
-          href: websiteHref,
-          ariaLabel: `Visit ${contactName} website`,
-          external: true,
-          icon: <Globe size={13} />,
-        }
-      : null,
-    contactLocation
-      ? {
-          key: 'location',
-          value: contactLocation,
-          icon: <MapPin size={13} />,
-        }
-      : null,
-  ]
-  const contactItems = rawContactItems.filter((item): item is HeaderContactItem => Boolean(item))
-
   return (
     <>
       <div className="max-w-4xl mx-auto">
         <div className="resume-page bg-white px-10 py-9 md:px-11 md:py-10 print:shadow-none print:px-0 print:py-0">
           <div className="resume-print-page-one-flow">
-            <header className="resume-header">
-              <div className="resume-header-top">
-                <div className="resume-header-portrait-shell">
-                  <div className="resume-header-portrait-frame">
-                    <img
-                      src={resolveStudioAssetSrc(data.header.profileSrc, data.header.profileSrc)}
-                      alt={data.header.profileAlt}
-                      className="resume-header-portrait-image"
-                    />
-                  </div>
-                </div>
-                <div className="resume-header-copy">
-                  <h1 className="resume-header-name">{data.header.name}</h1>
-                  {data.header.title ? <p className="resume-header-role">{data.header.title}</p> : null}
-                </div>
-              </div>
-              {contactItems.length > 0 ? (
-                <div id="contact" className="resume-header-contact">
-                  {contactItems.map((item, index) => (
-                    <Fragment key={item.key}>
-                      {item.href ? (
-                        <a
-                          href={item.href}
-                          target={item.external ? '_blank' : undefined}
-                          rel={item.external ? 'noopener noreferrer' : undefined}
-                          className="resume-header-contact-link"
-                          aria-label={item.ariaLabel}
-                        >
-                          {item.icon}
-                          {item.value}
-                        </a>
-                      ) : (
-                        <span className="resume-header-contact-item">
-                          {item.icon}
-                          {item.value}
-                        </span>
-                      )}
-                      {index < contactItems.length - 1 ? (
-                        <span className="resume-contact-separator" aria-hidden="true" />
-                      ) : null}
-                    </Fragment>
-                  ))}
-                </div>
-              ) : null}
-              <hr className="resume-header-divider" />
-            </header>
+            <DocumentHeader
+              name={data.header.name}
+              role={data.header.title}
+              profileSrc={data.header.profileSrc}
+              profileAlt={data.header.profileAlt}
+              email={data.header.contact.email}
+              phone={data.header.contact.phone}
+              website={data.header.contact.website}
+              location={data.header.contact.location}
+              contactId="contact"
+            />
 
             <section className="resume-summary-section">
               <p className="resume-summary-text">{data.header.summary}</p>
@@ -535,77 +445,11 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           .resume-print-page-two-flow {
             page-break-before: always !important;
             break-before: page !important;
-            gap: calc(13pt * var(--pdf-density)) !important;
+            gap: calc(10pt * var(--pdf-density)) !important;
             margin-top: 0 !important;
           }
 
-          .resume-header {
-            margin-bottom: 0 !important;
-          }
-
-          .resume-header-top {
-            display: grid !important;
-            grid-template-columns: 56px 1fr !important;
-            align-items: center !important;
-            column-gap: var(--pdf-column-gap) !important;
-          }
-
-          .resume-header-portrait-frame {
-            width: 56px !important;
-            height: 56px !important;
-            border-radius: 9999px !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: none !important;
-            background: white !important;
-          }
-
-          .resume-header-portrait-image {
-            width: 56px !important;
-            height: 56px !important;
-            aspect-ratio: 1 / 1 !important;
-            object-fit: cover !important;
-            object-position: center 12% !important;
-          }
-
-          .resume-header-name {
-            font-family: var(--font-display) !important;
-            font-size: 20pt !important;
-            line-height: 1 !important;
-            letter-spacing: 0 !important;
-            font-weight: 700 !important;
-            font-feature-settings: 'kern' 1 !important;
-            text-rendering: optimizeLegibility !important;
-            margin: 0 !important;
-          }
-
-          .resume-header-role {
-            font-size: 10.2pt !important;
-            line-height: 1.15 !important;
-            letter-spacing: 0 !important;
-            margin-top: var(--pdf-space-2) !important;
-            color: #64748b !important;
-          }
-
-          .resume-header-contact {
-            margin-top: var(--pdf-space-3) !important;
-            gap: var(--pdf-space-1) var(--pdf-space-3) !important;
-            font-size: 8.2pt !important;
-          }
-
-          .resume-header-contact a,
-          .resume-header-contact span {
-            font-size: 8.2pt !important;
-          }
-
-          .resume-contact-separator {
-            display: inline-block !important;
-            height: var(--pdf-space-4) !important;
-          }
-
-          .resume-header-divider {
-            margin-top: var(--pdf-space-3) !important;
-            border-top: 1px solid #cbd5e1 !important;
-          }
+          ${DOCUMENT_HEADER_PRINT_CSS}
 
           .resume-summary-section {
             margin-bottom: 0 !important;
@@ -688,7 +532,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-print-page-two-flow .resume-section-heading {
-            margin-bottom: calc(7.2pt * var(--pdf-density)) !important;
+            margin-bottom: calc(5.6pt * var(--pdf-density)) !important;
           }
 
           .resume-section-body {
@@ -703,7 +547,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-print-page-two-flow .resume-section-body-stack {
-            gap: calc(12.4pt * var(--pdf-density)) !important;
+            gap: calc(9pt * var(--pdf-density)) !important;
           }
 
           .resume-summary-text {
@@ -857,7 +701,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-print-page-two-flow .resume-certification-column {
-            gap: calc(8.2pt * var(--pdf-density)) !important;
+            gap: calc(6pt * var(--pdf-density)) !important;
           }
 
           .resume-certification-area {
@@ -871,7 +715,7 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-print-page-two-flow .resume-certification-area {
-            padding-top: calc(3.4pt * var(--pdf-density)) !important;
+            padding-top: calc(2.6pt * var(--pdf-density)) !important;
           }
 
           .resume-certification-area-header {
@@ -924,8 +768,8 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-print-page-two-flow .resume-certification-card + .resume-certification-card {
-            margin-top: calc(3.5pt * var(--pdf-density)) !important;
-            padding-top: calc(3.5pt * var(--pdf-density)) !important;
+            margin-top: calc(2.6pt * var(--pdf-density)) !important;
+            padding-top: calc(2.6pt * var(--pdf-density)) !important;
           }
 
           #community .resume-section-body-stack {
@@ -933,7 +777,12 @@ export const ResumePreview = ({ template }: ResumePreviewProps) => {
           }
 
           .resume-print-page-two-flow #community .resume-section-body-stack {
-            gap: calc(9.2pt * var(--pdf-density)) !important;
+            gap: calc(4.8pt * var(--pdf-density)) !important;
+          }
+
+          .resume-print-page-two-flow #community .resume-entry-group {
+            break-inside: auto !important;
+            page-break-inside: auto !important;
           }
 
           .resume-certification-card-brand {

@@ -14,8 +14,19 @@ const resolvePathMatch = (event) => {
   )
 }
 
-const resolveDraftId = (event) => event.queryStringParameters?.draftId || ''
-const resolveAction = (event) => event.queryStringParameters?.action || ''
+// Netlify does not merge query params from a redirect's `to` target into the
+// function event, so draftId/action must also be recoverable from the path
+// (mirrors ai-drafts.mjs / automation-drafts.mjs).
+const resolveReviewActionMatch = (event) => {
+  const rawTarget = [event.rawUrl, event.path].filter(Boolean).join(' ')
+  return rawTarget.match(/\/admin\/ai-review\/([^/?\s]+)\/(apply|reject)(?:[/?\s]|$)/)
+}
+
+const resolveDraftId = (event) =>
+  event.queryStringParameters?.draftId ||
+  decodeURIComponent(resolveReviewActionMatch(event)?.[1] || '')
+const resolveAction = (event) =>
+  event.queryStringParameters?.action || resolveReviewActionMatch(event)?.[2] || ''
 const resolveDocumentType = (event) =>
   event.queryStringParameters?.documentType || resolvePathMatch(event)?.[1] || ''
 const resolveTemplateId = (event) =>

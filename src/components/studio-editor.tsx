@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Bot, ClipboardList, Copy, Download, FileText, Layers, LogOut, Mail, Save, ShieldCheck } from 'lucide-react'
 
 import { CoverLetterPreview } from '@/components/cover-letter-preview'
@@ -30,6 +40,7 @@ import {
   buildSignatureHtmlFragment,
   buildSignaturePlainText,
 } from '@/lib/signature-html'
+import { getLocalExportStorageKey } from '@/lib/local-export'
 import {
   SIGNATURE_CERTIFICATION_LOGO_VALUES,
   SIGNATURE_EXPERIENCE_LOGO_VALUES,
@@ -128,12 +139,46 @@ const EditorSection = ({
   </section>
 )
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="studio-field">
-    <Label className="studio-field-label">{label}</Label>
-    {children}
-  </div>
-)
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => {
+  const generatedId = useId()
+  const labelId = `${generatedId}-label`
+  const controlId = `${generatedId}-control`
+  const child = Children.only(children)
+
+  if (isValidElement(child)) {
+    const isNativeControl =
+      typeof child.type === 'string' && ['input', 'select', 'textarea'].includes(child.type)
+    const isStudioControl = child.type === Input || child.type === Textarea
+
+    if (isNativeControl || isStudioControl) {
+      const typedChild = child as React.ReactElement<{
+        id?: string
+        'aria-labelledby'?: string
+      }>
+      const id = typedChild.props.id ?? controlId
+
+      return (
+        <div className="studio-field">
+          <Label htmlFor={id} className="studio-field-label">
+            {label}
+          </Label>
+          {cloneElement(typedChild, { id })}
+        </div>
+      )
+    }
+  }
+
+  return (
+    <div className="studio-field">
+      <Label id={labelId} className="studio-field-label">
+        {label}
+      </Label>
+      <div role="group" aria-labelledby={labelId}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
 const formatDocumentTypeLabel = (documentType: DocumentType) =>
   STUDIO_EDIT_SCHEMA.documents[documentType].displayName
@@ -408,6 +453,7 @@ export function StudioEditor({
   const [isLoadingAiReview, setIsLoadingAiReview] = useState(false)
   const [aiReviewError, setAiReviewError] = useState('')
   const [activeDraftActionId, setActiveDraftActionId] = useState('')
+  const statusTimeoutRef = useRef<number | null>(null)
 
   const selectedResume = resumeTemplates.find((template) => template.id === resumeId) ?? resumeTemplates[0]
   const selectedCoverLetter = coverLetters.find((template) => template.id === coverLetterId) ?? coverLetters[0]
@@ -572,6 +618,15 @@ export function StudioEditor({
     setDocumentType(initialDocumentType)
   }, [initialDocumentType])
 
+  useEffect(
+    () => () => {
+      if (statusTimeoutRef.current) {
+        window.clearTimeout(statusTimeoutRef.current)
+      }
+    },
+    [],
+  )
+
   useEffect(() => {
     let cancelled = false
 
@@ -620,8 +675,14 @@ export function StudioEditor({
   }
 
   const pushStatusMessage = (message: string, timeout = 2600) => {
+    if (statusTimeoutRef.current) {
+      window.clearTimeout(statusTimeoutRef.current)
+    }
     setStatusMessage(message)
-    window.setTimeout(() => setStatusMessage(''), timeout)
+    statusTimeoutRef.current = window.setTimeout(() => {
+      setStatusMessage('')
+      statusTimeoutRef.current = null
+    }, timeout)
   }
 
   const handleSaveDocument = async () => {
@@ -660,7 +721,8 @@ export function StudioEditor({
 
       try {
         await saveStoredDocument('resume', { selectedId: resumeId, templates: resumeTemplates })
-        const exportUrl = `/studio/resume/pdf?template=${encodeURIComponent(resumeId)}&autoprint=1`
+        window.localStorage.setItem(getLocalExportStorageKey('resume'), JSON.stringify(selectedResume))
+        const exportUrl = `/studio/resume/pdf?mode=local&template=${encodeURIComponent(resumeId)}&autoprint=1`
 
         if (exportWindow) {
           exportWindow.location.href = exportUrl
@@ -688,7 +750,11 @@ export function StudioEditor({
           selectedId: coverLetterId,
           templates: coverLetters,
         })
-        const exportUrl = `/studio/cover-letter/pdf?template=${encodeURIComponent(coverLetterId)}&autoprint=1`
+        window.localStorage.setItem(
+          getLocalExportStorageKey('cover-letter'),
+          JSON.stringify(selectedCoverLetter),
+        )
+        const exportUrl = `/studio/cover-letter/pdf?mode=local&template=${encodeURIComponent(coverLetterId)}&autoprint=1`
 
         if (exportWindow) {
           exportWindow.location.href = exportUrl
@@ -1262,18 +1328,6 @@ export function StudioEditor({
         ...template,
         data: {
           ...nextData,
-          ...(template.id === 'queens'
-            ? {
-                email:
-                  typeof patch.email === 'string' && patch.email.includes('.')
-                    ? patch.email.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com')
-                    : nextData.email.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com'),
-                website:
-                  typeof patch.website === 'string' && patch.website.includes('.')
-                    ? patch.website.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com')
-                    : nextData.website.replace(/\.net$/u, '.com').replace(/\.ca$/u, '.com'),
-              }
-            : {}),
           experienceLogos: normalizeSignatureLogos(nextData.experienceLogos, SIGNATURE_EXPERIENCE_LOGO_VALUES),
           educationLogos: normalizeSignatureLogos(
             nextData.educationLogos,
@@ -1326,7 +1380,7 @@ export function StudioEditor({
           </nav>
 
           <div className="studio-shell-actions">
-            <p className="studio-shell-status">
+            <p className="studio-shell-status" role="status" aria-live="polite">
               {isHydrating ? 'Syncing saved documents…' : statusMessage || `Signed in as ${session.username}`}
             </p>
             <div className="studio-shell-action-row">
@@ -1428,15 +1482,15 @@ export function StudioEditor({
               <EditorSection title="Contact rail" description="Small metadata line shown under the identity block.">
                 <InlineFields>
                   <Field label="Email">
-                    <Input value={selectedResume.data.header.contact.email} onChange={(event) => updateResumeContact({ email: event.target.value })} />
+                    <Input type="email" autoComplete="email" value={selectedResume.data.header.contact.email} onChange={(event) => updateResumeContact({ email: event.target.value })} />
                   </Field>
                   <Field label="Phone">
-                    <Input value={selectedResume.data.header.contact.phone} onChange={(event) => updateResumeContact({ phone: event.target.value })} />
+                    <Input type="tel" autoComplete="tel" value={selectedResume.data.header.contact.phone} onChange={(event) => updateResumeContact({ phone: event.target.value })} />
                   </Field>
                 </InlineFields>
                 <InlineFields>
                   <Field label="Website">
-                    <Input value={selectedResume.data.header.contact.website} onChange={(event) => updateResumeContact({ website: event.target.value })} />
+                    <Input inputMode="url" autoComplete="url" autoCapitalize="none" value={selectedResume.data.header.contact.website} onChange={(event) => updateResumeContact({ website: event.target.value })} />
                   </Field>
                   <Field label="Location">
                     <Input value={selectedResume.data.header.contact.location} onChange={(event) => updateResumeContact({ location: event.target.value })} />
@@ -1834,6 +1888,34 @@ export function StudioEditor({
                   <Input value={selectedCoverLetter.config.contextNote} onChange={(event) => updateCoverLetterConfig({ contextNote: event.target.value })} />
                 </Field>
                 <InlineFields>
+                  <Field label="Education line">
+                    <Input value={selectedCoverLetter.config.credentialName} onChange={(event) => updateCoverLetterConfig({ credentialName: event.target.value })} />
+                  </Field>
+                  <Field label="Degree line">
+                    <Input value={selectedCoverLetter.config.credentialDetail} onChange={(event) => updateCoverLetterConfig({ credentialDetail: event.target.value })} />
+                  </Field>
+                </InlineFields>
+                <Field label="Education logo">
+                  <select
+                    value={selectedCoverLetter.config.credentialLogoSrc}
+                    onChange={(event) =>
+                      updateCoverLetterConfig({
+                        credentialLogoSrc: event.target.value,
+                        credentialLogoAlt:
+                          logoOptions.find((option) => option.value === event.target.value)?.label ??
+                          selectedCoverLetter.config.credentialLogoAlt,
+                      })
+                    }
+                    className={selectClassName}
+                  >
+                    {logoOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <InlineFields>
                   <Field label="Portrait">
                     <select
                       value={selectedCoverLetter.config.profileSrc}
@@ -1883,15 +1965,15 @@ export function StudioEditor({
                     <Input value={selectedCoverLetter.data.yourName} onChange={(event) => updateCoverLetterData({ yourName: event.target.value })} />
                   </Field>
                   <Field label="Email">
-                    <Input value={selectedCoverLetter.data.yourEmail} onChange={(event) => updateCoverLetterData({ yourEmail: event.target.value })} />
+                    <Input type="email" autoComplete="email" value={selectedCoverLetter.data.yourEmail} onChange={(event) => updateCoverLetterData({ yourEmail: event.target.value })} />
                   </Field>
                 </InlineFields>
                 <InlineFields>
                   <Field label="Phone">
-                    <Input value={selectedCoverLetter.data.yourPhone} onChange={(event) => updateCoverLetterData({ yourPhone: event.target.value })} />
+                    <Input type="tel" autoComplete="tel" value={selectedCoverLetter.data.yourPhone} onChange={(event) => updateCoverLetterData({ yourPhone: event.target.value })} />
                   </Field>
                   <Field label="Website">
-                    <Input value={selectedCoverLetter.data.yourWebsite} onChange={(event) => updateCoverLetterData({ yourWebsite: event.target.value })} />
+                    <Input inputMode="url" autoComplete="url" autoCapitalize="none" value={selectedCoverLetter.data.yourWebsite} onChange={(event) => updateCoverLetterData({ yourWebsite: event.target.value })} />
                   </Field>
                 </InlineFields>
                 <Field label="Location">
@@ -1984,15 +2066,15 @@ export function StudioEditor({
                 </Field>
                 <InlineFields>
                   <Field label="Email">
-                    <Input value={selectedSignature.data.email} onChange={(event) => updateSignatureData({ email: event.target.value })} />
+                    <Input type="email" autoComplete="email" value={selectedSignature.data.email} onChange={(event) => updateSignatureData({ email: event.target.value })} />
                   </Field>
                   <Field label="Website">
-                    <Input value={selectedSignature.data.website} onChange={(event) => updateSignatureData({ website: event.target.value })} />
+                    <Input inputMode="url" autoComplete="url" autoCapitalize="none" value={selectedSignature.data.website} onChange={(event) => updateSignatureData({ website: event.target.value })} />
                   </Field>
                 </InlineFields>
                 <InlineFields>
                   <Field label="Phone">
-                    <Input value={selectedSignature.data.phone} onChange={(event) => updateSignatureData({ phone: event.target.value })} />
+                    <Input type="tel" autoComplete="tel" value={selectedSignature.data.phone} onChange={(event) => updateSignatureData({ phone: event.target.value })} />
                   </Field>
                   <Field label="Location">
                     <Input value={selectedSignature.data.location ?? ''} onChange={(event) => updateSignatureData({ location: event.target.value })} />

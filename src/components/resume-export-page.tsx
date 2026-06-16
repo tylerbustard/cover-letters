@@ -7,6 +7,19 @@ import { getAiProjectedTemplate, getStoredDocument, saveStoredDocument } from '@
 import { migrateResumeState } from '@/lib/studio-migrations'
 import type { ResumeTemplate } from '@/types'
 
+const migrateLocalResumeTemplate = (template: ResumeTemplate) => {
+  const migrated = migrateResumeState({
+    selectedId: template.id,
+    templates: [template],
+  })
+  return (
+    migrated.state.templates.find((item) => item.id === template.id) ??
+    migrated.state.templates.find((item) => item.id === migrated.state.selectedId) ??
+    migrated.state.templates[0] ??
+    template
+  )
+}
+
 export const ResumeExportPage = () => {
   const [template, setTemplate] = useState<ResumeTemplate | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
@@ -33,7 +46,7 @@ export const ResumeExportPage = () => {
           if (!localTemplate) {
             setErrorMessage('Unable to load the local resume payload.')
           } else {
-            setTemplate(localTemplate)
+            setTemplate(migrateLocalResumeTemplate(localTemplate))
           }
           return
         }

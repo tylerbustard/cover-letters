@@ -70,8 +70,8 @@ const SIGNATURE_EXPERIENCE_LOGO_TOKENS = new Set([
   'bmo',
   'td',
   'rbc',
-  'irving',
   'grant-thornton',
+  'irving',
 ])
 
 const SIGNATURE_CERTIFICATION_LOGO_TOKENS = new Set([
@@ -85,11 +85,18 @@ const SIGNATURE_CERTIFICATION_LOGO_TOKENS = new Set([
 ])
 
 const SIGNATURE_EDUCATION_LOGO_TOKENS = {
-  unb: new Set(['unb-full']),
-  mcgill: new Set(['mcgill-alt', 'unb-full']),
-  queens: new Set(['queens-alt', 'unb-full']),
-  rotman: new Set(['rotman', 'unb-full']),
-  strings: new Set(['unb-full']),
+  unb: new Set(['unb', 'unb-full']),
+  mcgill: new Set(['mcgill-alt', 'unb', 'unb-full']),
+  queens: new Set(['queens-alt', 'unb', 'unb-full']),
+  rotman: new Set(['rotman', 'unb', 'unb-full']),
+  strings: new Set(['unb', 'unb-full']),
+}
+
+const SIGNATURE_CONTACT_ICON_FILES = {
+  phone: 'phone',
+  email: 'mail',
+  website: 'globe',
+  location: 'map-pin',
 }
 
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -104,6 +111,12 @@ const clampEntryGroupColumns = (value) => {
 const normalizeLayout = (value) => (asString(value).toLowerCase() === 'grid' ? 'grid' : 'stack')
 const normalizeColumn = (value) => (asString(value).toLowerCase() === 'right' ? 'right' : 'left')
 const normalizeLogoTone = (value) => (asString(value).toLowerCase() === 'monochrome' ? 'monochrome' : 'original')
+const normalizeRoiText = (value) =>
+  asString(value)
+    .replace(/\bFiscal\s*\.\s*ai\b/giu, 'ROI')
+    .replace(/\bFiscal\s+AI\b/giu, 'ROI')
+const normalizeServerString = (value) =>
+  normalizeTylerContactIdentity(normalizeRoiText(value), normalizeRoiText(value))
 const escapeHtml = (value) =>
   asString(value)
     .replace(/&/g, '&amp;')
@@ -136,6 +149,176 @@ const getAiConfig = () => {
   }
 
   return { clientId, clientSecret, jwtSecret, issuer, audience }
+}
+
+const normalizeTylerContactIdentity = (value, fallback = '') => {
+  const rawValue = asString(value, fallback)
+  if (!rawValue) return fallback
+
+  const queenSafeValue = rawValue
+    .replace(/tyler\.bustard@queensu\.com\b/giu, 'tyler.bustard@queensu.ca')
+    .replace(/\bqueensu\.com\b/giu, 'queensu.ca')
+
+  if (/tylerbustard\.net\b/iu.test(fallback)) {
+    return queenSafeValue
+      .replace(/tyler@tylerbustard\.com\b/giu, 'tyler@tylerbustard.net')
+      .replace(/tylerbustard\.com\b/giu, 'tylerbustard.net')
+  }
+
+  if (/tylerbustard\.com\b/iu.test(fallback)) {
+    return queenSafeValue
+      .replace(/tyler@tylerbustard\.net\b/giu, 'tyler@tylerbustard.com')
+      .replace(/tylerbustard\.net\b/giu, 'tylerbustard.com')
+  }
+
+  return queenSafeValue
+}
+
+const normalizeServerValue = (value) => {
+  if (typeof value === 'string') return normalizeServerString(value)
+  if (Array.isArray(value)) return value.map(normalizeServerValue)
+  if (!isRecord(value)) return value
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [key, normalizeServerValue(entry)]),
+  )
+}
+
+const normalizeCoverLetterTemplateForServer = (template) => {
+  if (!isRecord(template.data)) return template
+
+  if (['Best regards,', 'Best regards'].includes(asString(template.data.signoffLabel))) {
+    template.data.signoffLabel = 'Sincerely,'
+  }
+
+  if (asString(template.id) === 'mcgill') {
+    template.config = isRecord(template.config) ? template.config : {}
+    template.config.tagline = 'MBA Candidate, 2026-2027'
+    template.config.contextNote = 'McGill University · Desautels Faculty of Management'
+    template.config.credentialName = 'McGill University - Desautels Faculty of Management'
+    template.config.credentialDetail = 'Master of Business Administration Candidate, 2026-2027'
+    template.config.credentialLogoAlt = 'McGill University'
+    template.data.yourEmail = normalizeTylerContactIdentity(template.data.yourEmail, 'tyler@tylerbustard.net')
+    template.data.yourWebsite = normalizeTylerContactIdentity(template.data.yourWebsite, 'tylerbustard.net')
+  }
+
+  return template
+}
+
+const normalizeQueensAffiliationRows = (lines) => {
+  const joined = lines.join('; ')
+  if (!/Queen'?s University/iu.test(joined) || !/Smith School of Business/iu.test(joined)) return lines
+  if (/Master of Finance Candidate/iu.test(joined)) {
+    return ["Queen's University - Smith School of Business", 'Master of Finance Candidate, 2026-2027']
+  }
+  return ["Queen's University - Smith School of Business", ...lines.slice(1)]
+}
+
+const normalizeSignatureTemplateForServer = (template) => {
+  if (!isRecord(template.data)) return template
+
+  const templateId = asString(template.id, 'unb')
+  const data = template.data
+  const rawLogos = Array.isArray(data.logos) ? data.logos : []
+
+  if (asString(data.role) === 'Finance & Technology Professional') {
+    data.role = 'Finance & Technology'
+  }
+
+  if (['Best regards,', 'Best regards', ''].includes(asString(data.signoff))) {
+    data.signoff = 'Sincerely'
+  }
+
+  if (templateId === 'mcgill') {
+    data.role = 'Master of Business Administration Candidate, 2026-2027'
+    data.organization = 'McGill University - Desautels Faculty of Management'
+    data.email = normalizeTylerContactIdentity(data.email, 'tyler@tylerbustard.net')
+    data.website = normalizeTylerContactIdentity(data.website, 'tylerbustard.net')
+    data.affiliationLines = [
+      'McGill University - Desautels Faculty of Management',
+      'Master of Business Administration Candidate, 2026-2027',
+    ]
+  }
+
+  const affiliationLines = normalizeSignatureAffiliationLines(data)
+  data.affiliationLines =
+    templateId === 'queens'
+      ? normalizeQueensAffiliationRows(affiliationLines)
+      : affiliationLines
+
+  data.experienceLogos = toLogoAssets(
+    normalizeSignatureLogoTokens(data.experienceLogos ?? rawLogos, SIGNATURE_EXPERIENCE_LOGO_TOKENS),
+  )
+  data.educationLogos = toLogoAssets(
+    normalizeSignatureLogoTokens(data.educationLogos ?? rawLogos, getSignatureEducationLogoTokens(templateId)),
+  )
+  data.certificationLogos = toLogoAssets(
+    normalizeSignatureLogoTokens(data.certificationLogos ?? rawLogos, SIGNATURE_CERTIFICATION_LOGO_TOKENS),
+  )
+  data.logoTone = normalizeLogoTone(data.logoTone)
+
+  return template
+}
+
+const normalizeResumeTemplateForServer = (template) => {
+  const header = isRecord(template.data?.header) ? template.data.header : null
+  if (header && asString(header.title) === 'Finance & Technology Professional') {
+    header.title = 'Finance & Technology'
+  }
+
+  if (asString(template.id) === 'mcgill' && isRecord(template.data)) {
+    if (header) {
+      header.title = 'MBA Candidate, 2026-2027'
+      header.contact = isRecord(header.contact) ? header.contact : {}
+      header.contact.email = normalizeTylerContactIdentity(header.contact.email, 'tyler@tylerbustard.net')
+      header.contact.website = normalizeTylerContactIdentity(header.contact.website, 'tylerbustard.net')
+    }
+
+    const education = asArray(template.data.education)
+    const existingMcgill =
+      education.find((entry) => isRecord(entry) && (asString(entry.id) === 'education-mcgill' || asString(entry.school) === 'McGill University')) ??
+      {}
+    const existingUnb = education.find((entry) => isRecord(entry) && asString(entry.school) === 'University of New Brunswick')
+
+    template.data.education = [
+      {
+        ...existingMcgill,
+        id: 'education-mcgill',
+        degree: 'Master of Business Administration Candidate',
+        program: 'Desautels Faculty of Management',
+        school: 'McGill University',
+        date: '2026-2027',
+        bullets: [
+          'MBA Internship, non-thesis program through McGill Desautels Faculty of Management',
+          'Graduate management focus aligned with investment analysis, portfolio operations, capital markets, and technology-enabled reporting',
+          'Merit scholarship consideration based on the McGill MBA admissions profile; award amount not yet confirmed',
+        ],
+        logoAlt: 'McGill University',
+      },
+      ...(existingUnb ? [existingUnb] : []),
+    ]
+  }
+
+  return template
+}
+
+const migrateDocumentState = (documentType, state) => {
+  const nextState = normalizeServerValue(clone(state))
+
+  if (Array.isArray(nextState.templates)) {
+    nextState.templates = nextState.templates.map((template) => {
+      if (!isRecord(template)) return template
+      if (documentType === 'resume') return normalizeResumeTemplateForServer(template)
+      if (documentType === 'cover-letter') return normalizeCoverLetterTemplateForServer(template)
+      if (documentType === 'email-signature') return normalizeSignatureTemplateForServer(template)
+      return template
+    })
+  }
+
+  return {
+    state: nextState,
+    migrated: JSON.stringify(nextState) !== JSON.stringify(state),
+  }
 }
 
 const base64UrlEncode = (value) => Buffer.from(value, 'utf8').toString('base64url')
@@ -272,6 +455,22 @@ const normalizeJobMetadata = (value) => {
 }
 
 const assetOptionsForSource = (source) => STUDIO_EDIT_SCHEMA.assetOptions[source] ?? []
+const assetOptionsForField = (source, { documentType, jsonPath, templateId }) => {
+  const options = assetOptionsForSource(source)
+  if (documentType !== 'email-signature') return options
+
+  if (jsonPath === 'data.experienceLogos') {
+    return options.filter((option) => SIGNATURE_EXPERIENCE_LOGO_TOKENS.has(option.value))
+  }
+  if (jsonPath === 'data.certificationLogos') {
+    return options.filter((option) => SIGNATURE_CERTIFICATION_LOGO_TOKENS.has(option.value))
+  }
+  if (jsonPath === 'data.educationLogos') {
+    return options.filter((option) => getSignatureEducationLogoTokens(templateId).has(option.value))
+  }
+
+  return options
+}
 const assetLabelMap = new Map(
   Object.values(STUDIO_EDIT_SCHEMA.assetOptions)
     .flat()
@@ -344,8 +543,12 @@ const toAssetTokenList = (value, source = 'logos') => {
 const getSignatureEducationLogoTokens = (templateId) =>
   SIGNATURE_EDUCATION_LOGO_TOKENS[templateId] ?? SIGNATURE_EDUCATION_LOGO_TOKENS.unb
 
-const normalizeSignatureLogoTokens = (value, allowedTokens) =>
-  toAssetTokenList(value, 'logos').filter((token) => allowedTokens.has(token))
+const normalizeSignatureLogoTokens = (value, allowedTokens) => {
+  const order = new Map([...allowedTokens].map((token, index) => [token, index]))
+  return toAssetTokenList(value, 'logos')
+    .filter((token) => allowedTokens.has(token))
+    .sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
+}
 
 const getAllowedSignatureLogoTokensForField = (template, descriptor) => {
   if (descriptor.documentType !== 'email-signature') return null
@@ -360,7 +563,7 @@ const getAllowedSignatureLogoTokensForField = (template, descriptor) => {
 const normalizeAssetListForDescriptor = (template, descriptor, value) => {
   const tokens = toAssetTokenList(value, 'logos')
   const allowedTokens = getAllowedSignatureLogoTokensForField(template, descriptor)
-  return allowedTokens ? tokens.filter((token) => allowedTokens.has(token)) : tokens
+  return allowedTokens ? normalizeSignatureLogoTokens(tokens, allowedTokens) : tokens
 }
 
 const assertAssetListTokenAllowed = (template, descriptor, token) => {
@@ -469,7 +672,21 @@ const getDocumentState = async (event, documentType) => {
     throw new HttpError(404, 'Document state not initialized')
   }
 
-  return { store, state: document }
+  const migrated = migrateDocumentState(documentType, document)
+  if (!migrated.migrated) {
+    return { store, state: document, migrated: false }
+  }
+
+  const updatedAt = new Date().toISOString()
+  const nextState = { ...migrated.state, updatedAt }
+  await store.set(`${documentType}.json`, JSON.stringify(nextState), {
+    metadata: {
+      type: documentType,
+      updatedAt,
+    },
+  })
+
+  return { store, state: nextState, migrated: true }
 }
 
 const getTemplateById = (state, templateId) => {
@@ -530,6 +747,7 @@ const buildFieldDescriptor = ({
   key,
   jsonPath,
   currentValue,
+  templateId = '',
 }) => {
   const template = getFieldTemplate(documentType, templateGroup, key)
   const section = getSectionMeta(documentType, sectionId)
@@ -547,7 +765,9 @@ const buildFieldDescriptor = ({
     locked: template.allowedOps.length === 0,
     currentValue,
     assetSource: template.assetSource,
-    assetOptions: template.assetSource ? assetOptionsForSource(template.assetSource) : undefined,
+    assetOptions: template.assetSource
+      ? assetOptionsForField(template.assetSource, { documentType, jsonPath, templateId })
+      : undefined,
   }
 }
 
@@ -868,6 +1088,9 @@ const buildCoverLetterContext = (template) => {
       presetLabel: asString(config.presetLabel),
       tagline: asString(config.tagline),
       contextNote: asString(config.contextNote),
+      credentialName: asString(config.credentialName),
+      credentialDetail: asString(config.credentialDetail),
+      credentialLogoSrc: normalizeAssetToken(config.credentialLogoSrc),
       profileSrc: normalizeAssetToken(config.profileSrc),
       signatureSrc: normalizeAssetToken(config.signatureSrc),
     },
@@ -895,6 +1118,9 @@ const buildCoverLetterContext = (template) => {
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'presetLabel', jsonPath: 'config.presetLabel', currentValue: snapshot.config.presetLabel }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'tagline', jsonPath: 'config.tagline', currentValue: snapshot.config.tagline }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'contextNote', jsonPath: 'config.contextNote', currentValue: snapshot.config.contextNote }),
+    buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'credentialName', jsonPath: 'config.credentialName', currentValue: snapshot.config.credentialName }),
+    buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'credentialDetail', jsonPath: 'config.credentialDetail', currentValue: snapshot.config.credentialDetail }),
+    buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'credentialLogoSrc', jsonPath: 'config.credentialLogoSrc', currentValue: snapshot.config.credentialLogoSrc }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'profileSrc', jsonPath: 'config.profileSrc', currentValue: snapshot.config.profileSrc }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'template', templateGroup: 'template', key: 'signatureSrc', jsonPath: 'config.signatureSrc', currentValue: snapshot.config.signatureSrc }),
     buildFieldDescriptor({ documentType: 'cover-letter', sectionId: 'sender', templateGroup: 'sender', key: 'yourName', jsonPath: 'data.yourName', currentValue: snapshot.data.yourName }),
@@ -960,9 +1186,9 @@ const buildSignatureContext = (template) => {
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'phone', jsonPath: 'data.phone', currentValue: snapshot.data.phone }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'location', jsonPath: 'data.location', currentValue: snapshot.data.location }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'profileSrc', jsonPath: 'data.profileSrc', currentValue: snapshot.data.profileSrc }),
-    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'experienceLogos', jsonPath: 'data.experienceLogos', currentValue: snapshot.data.experienceLogos }),
-    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'educationLogos', jsonPath: 'data.educationLogos', currentValue: snapshot.data.educationLogos }),
-    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'certificationLogos', jsonPath: 'data.certificationLogos', currentValue: snapshot.data.certificationLogos }),
+    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'experienceLogos', jsonPath: 'data.experienceLogos', currentValue: snapshot.data.experienceLogos, templateId }),
+    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'educationLogos', jsonPath: 'data.educationLogos', currentValue: snapshot.data.educationLogos, templateId }),
+    buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'certificationLogos', jsonPath: 'data.certificationLogos', currentValue: snapshot.data.certificationLogos, templateId }),
     buildFieldDescriptor({ documentType: 'email-signature', sectionId: 'identity', templateGroup: 'identity', key: 'logoTone', jsonPath: 'data.logoTone', currentValue: snapshot.data.logoTone }),
   ]
 
@@ -1175,6 +1401,8 @@ const applyAddListItem = (template, descriptor, value) => {
     if (!current.some((entry) => isRecord(entry) && normalizeAssetToken(entry.src) === token)) {
       current.push({ src: token, alt: assetLabelMap.get(token) ?? token })
     }
+    const tokens = normalizeAssetListForDescriptor(template, descriptor, current)
+    setPathValue(template, descriptor.jsonPath, toLogoAssets(tokens))
     return
   }
 
@@ -1206,6 +1434,10 @@ const applyRemoveListItem = (template, descriptor, operation) => {
   }
 
   current.splice(targetIndex, 1)
+  if (descriptor.valueType === 'assetList') {
+    const tokens = normalizeAssetListForDescriptor(template, descriptor, current)
+    setPathValue(template, descriptor.jsonPath, toLogoAssets(tokens))
+  }
 }
 
 const applyCreateEntry = (template, collection, value) => {
@@ -1620,10 +1852,10 @@ const buildSignatureExportHtml = (origin, template) => {
   const logoTone = normalizeLogoTone(data.logoTone)
 
   const contactRows = [
-    { value: asString(data.phone), href: `tel:${asString(data.phone).replace(/[^+\d]/gu, '')}` },
-    { value: asString(data.email), href: `mailto:${asString(data.email)}` },
-    { value: asString(data.website), href: `https://${asString(data.website).replace(/^https?:\/\//u, '')}` },
-    { value: asString(data.location), href: '' },
+    { key: 'phone', value: asString(data.phone), href: `tel:${asString(data.phone).replace(/[^+\d]/gu, '')}` },
+    { key: 'email', value: asString(data.email), href: `mailto:${asString(data.email)}` },
+    { key: 'website', value: asString(data.website), href: `https://${asString(data.website).replace(/^https?:\/\//u, '')}` },
+    { key: 'location', value: asString(data.location), href: '' },
   ].filter((entry) => entry.value)
 
   const contactHtml = contactRows
@@ -1635,9 +1867,20 @@ const buildSignatureExportHtml = (origin, template) => {
         index < contactRows.length - 1
           ? `<td style="padding:0 11px 0 0;vertical-align:middle;color:#cbd5e1;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;">|</td>`
           : ''
+      const iconFile = SIGNATURE_CONTACT_ICON_FILES[entry.key]
+      const iconHtml = iconFile
+        ? `<td style="padding:0 5px 0 0;vertical-align:middle;line-height:0;font-size:0;"><img src="${escapeHtml(`${origin}/ai-assets/icons/${iconFile}.png`)}" width="13" height="13" alt="" style="display:block;width:13px;height:13px;border:0;outline:none;text-decoration:none;" /></td>`
+        : ''
 
       return `
-        <td style="padding:0 11px 0 0;vertical-align:middle;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;color:#64748b;white-space:nowrap;">${valueHtml}</td>
+        <td style="padding:0 11px 0 0;vertical-align:middle;">
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
+            <tr>
+              ${iconHtml}
+              <td style="vertical-align:middle;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.5px;line-height:1.35;color:#64748b;white-space:nowrap;">${valueHtml}</td>
+            </tr>
+          </table>
+        </td>
         ${separator}
       `
     })
@@ -1690,8 +1933,8 @@ const buildSignatureExportHtml = (origin, template) => {
         <td style="padding:0;background:#ffffff;">
           <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;">
             <tr>
-              <td style="padding:0 0 9px 0;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.8px;line-height:1.35;font-weight:500;letter-spacing:0;color:#475569;">
-                ${escapeHtml(asString(data.signoff, 'Best regards,'))}
+              <td style="padding:0 0 9px 0;font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.35;font-weight:500;letter-spacing:0;color:#475569;">
+                ${escapeHtml(asString(data.signoff, 'Sincerely'))}
               </td>
             </tr>
           </table>
@@ -1712,7 +1955,7 @@ const buildSignatureExportHtml = (origin, template) => {
                       ? `<tr><td style="height:3px;font-size:1px;line-height:1px;">&nbsp;</td></tr>${affiliationRows
                           .map(
                             (row, index) =>
-                              `<tr><td style="padding:${index === 0 ? '0' : '1px 0 0 0'};font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.8px;line-height:1.35;font-weight:${index === 0 ? '500' : '600'};letter-spacing:0;color:#334155;">${escapeHtml(row)}</td></tr>`,
+                              `<tr><td style="padding:${index === 0 ? '0' : '1px 0 0 0'};font-family:'Aptos','Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:12.8px;line-height:1.35;font-weight:${index === 0 ? '600' : '400'};letter-spacing:0;color:${index === 0 ? '#1e293b' : '#64748b'};">${escapeHtml(row)}</td></tr>`,
                           )
                           .join('')}`
                       : ''

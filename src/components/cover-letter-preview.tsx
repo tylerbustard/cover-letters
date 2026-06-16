@@ -1,195 +1,67 @@
-import { Globe, Mail, MapPin, Phone } from 'lucide-react'
-import { Fragment, type ReactElement } from 'react'
-
-import { assets, resolveStudioAssetSrc } from '@/data/assets'
-import { SIGNATURE_TEMPLATES } from '@/data/signatures'
+import { DOCUMENT_HEADER_PRINT_CSS, DocumentHeader } from '@/components/document-header'
+import { resolveStudioAssetSrc } from '@/data/assets'
 import { getLetterParagraphs, getRecipientLines } from '@/lib/letter'
-import { getSignatureAffiliationDisplayRows } from '@/lib/signature-identity'
 import type { CoverLetterData, CoverLetterTemplate } from '@/types'
-
-// The cover-letter education block reuses the EXACT rows the matching email signature
-// renders (institution[ - school], then degree/role), so the two documents can never
-// drift apart. Keyed by a substring of the header context note.
-type InstitutionCredentialSource = { matches: string[]; logoSrc: string; signatureId: string }
-
-const INSTITUTION_CREDENTIAL_SOURCES: InstitutionCredentialSource[] = [
-  { matches: ['new brunswick', 'unb'], logoSrc: assets.logoUnbFull, signatureId: 'unb' },
-  { matches: ['queen'], logoSrc: assets.logoQueensAlt, signatureId: 'queens' },
-  { matches: ['toronto', 'rotman'], logoSrc: assets.logoUoft, signatureId: 'rotman' },
-  { matches: ['mcgill'], logoSrc: assets.logoMcgillAlt, signatureId: 'mcgill' },
-]
-
-type InstitutionCredential = { logoSrc: string; rows: string[] }
-
-const resolveInstitutionCredential = (contextNote: string): InstitutionCredential | null => {
-  const haystack = contextNote.toLowerCase()
-  const source = INSTITUTION_CREDENTIAL_SOURCES.find((entry) =>
-    entry.matches.some((match) => haystack.includes(match)),
-  )
-  if (!source) return null
-  const signature = SIGNATURE_TEMPLATES.find((template) => template.id === source.signatureId)
-  const rows = signature ? getSignatureAffiliationDisplayRows(signature.data) : []
-  return rows.length > 0 ? { logoSrc: source.logoSrc, rows } : null
-}
 
 interface CoverLetterPreviewProps {
   data: CoverLetterData
   config: CoverLetterTemplate['config']
 }
 
-type HeaderContactItem = {
-  key: string
-  value: string
-  icon: ReactElement
-  href?: string
-  ariaLabel?: string
-  external?: boolean
-}
-
 export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) => {
   const paragraphs = getLetterParagraphs(data)
   const recipientLines = getRecipientLines(data)
   const greetingName = data.hiringManager.trim()
-  const contactName = data.yourName.trim() || 'contact'
-  const contactEmail = data.yourEmail.trim()
-  const contactPhone = data.yourPhone.trim()
-  const rawWebsite = data.yourWebsite.trim()
-  const websiteLabel = rawWebsite.replace(/^https?:\/\//u, '')
-  const websiteHref = rawWebsite.startsWith('http') ? rawWebsite : `https://${websiteLabel}`
-  const contactLocation = data.yourAddress.trim()
-  const tagline = config.tagline.trim()
-  const identitySummary = config.contextNote.trim()
-  const institutionCredential = resolveInstitutionCredential(identitySummary)
   const signoffLabel = data.signoffLabel.trim()
   const dateLabel = data.date.trim()
-  const rawContactItems: Array<HeaderContactItem | null> = [
-    contactEmail
-      ? {
-          key: 'email',
-          value: contactEmail,
-          href: `mailto:${contactEmail}`,
-          ariaLabel: `Email ${contactName}`,
-          icon: <Mail size={13} />,
-        }
-      : null,
-    contactPhone
-      ? {
-          key: 'phone',
-          value: contactPhone,
-          href: `tel:${contactPhone.replace(/[^+\d]/gu, '')}`,
-          ariaLabel: `Call ${contactName}`,
-          icon: <Phone size={13} />,
-        }
-      : null,
-    websiteLabel
-      ? {
-          key: 'website',
-          value: websiteLabel,
-          href: websiteHref,
-          ariaLabel: `Visit ${contactName} website`,
-          external: true,
-          icon: <Globe size={13} />,
-        }
-      : null,
-    contactLocation
-      ? {
-          key: 'location',
-          value: contactLocation,
-          icon: <MapPin size={13} />,
-        }
-      : null,
-  ]
-  const contactItems = rawContactItems.filter((item): item is HeaderContactItem => Boolean(item))
+  const credentialName = config.credentialName.trim()
+  const credentialDetail = config.credentialDetail.trim()
+  const credentialLogoSrc = config.credentialLogoSrc.trim()
+  const hasCredential = credentialName.length > 0 || credentialDetail.length > 0
 
   return (
     <>
       <div className="max-w-4xl mx-auto">
         <div className="resume-page bg-white px-10 py-9 md:px-11 md:py-10 print:shadow-none print:px-0 print:py-0">
           <article className="cover-letter-document cover-letter-sheet">
-            <header className="resume-header cover-letter-document-header">
-              <div className="resume-header-top cover-letter-document-header-top">
-                <div className="resume-header-portrait-shell">
-                  <div className="resume-header-portrait-frame">
-                    <img
-                      src={resolveStudioAssetSrc(config.profileSrc, config.profileSrc)}
-                      alt={config.profileAlt}
-                      className="resume-header-portrait-image"
-                    />
-                  </div>
-                </div>
-                <div className="resume-header-copy">
-                  <h1 className="resume-header-name">{data.yourName}</h1>
-                  {tagline ? <p className="resume-header-role">{tagline}</p> : null}
-                </div>
-              </div>
-              {contactItems.length > 0 ? (
-                <div className="resume-header-contact cover-letter-document-contact-rail">
-                  {contactItems.map((item, index) => (
-                    <Fragment key={item.key}>
-                      {item.href ? (
-                        <a
-                          href={item.href}
-                          target={item.external ? '_blank' : undefined}
-                          rel={item.external ? 'noopener noreferrer' : undefined}
-                          className="resume-header-contact-link"
-                          aria-label={item.ariaLabel}
-                        >
-                          {item.icon}
-                          {item.value}
-                        </a>
-                      ) : (
-                        <span className="resume-header-contact-item">
-                          {item.icon}
-                          {item.value}
-                        </span>
-                      )}
-                      {index < contactItems.length - 1 ? (
-                        <span className="resume-contact-separator" aria-hidden="true" />
-                      ) : null}
-                    </Fragment>
-                  ))}
-                </div>
-              ) : null}
-              <hr className="resume-header-divider" />
-            </header>
+            <DocumentHeader
+              name={data.yourName}
+              role={config.tagline}
+              profileSrc={config.profileSrc}
+              profileAlt={config.profileAlt}
+              email={data.yourEmail}
+              phone={data.yourPhone}
+              website={data.yourWebsite}
+              location={data.yourAddress}
+              variant="cover-letter"
+            />
 
-            {identitySummary ? (
-              <section className="resume-summary-section cover-letter-document-summary-section">
-                {institutionCredential ? (
-                  <div className="cover-letter-credential">
+            {hasCredential ? (
+              <>
+                <section className="cover-letter-credential" aria-label="Education">
+                  {credentialLogoSrc ? (
                     <span className="cover-letter-credential-logo-shell">
                       <img
-                        src={resolveStudioAssetSrc(
-                          institutionCredential.logoSrc,
-                          institutionCredential.logoSrc,
-                        )}
-                        alt={institutionCredential.rows[0]}
+                        src={resolveStudioAssetSrc(credentialLogoSrc, credentialLogoSrc)}
+                        alt={config.credentialLogoAlt}
                         className="cover-letter-credential-logo"
                       />
                     </span>
-                    <span className="cover-letter-credential-copy">
-                      {institutionCredential.rows.map((row, index) => (
-                        <span
-                          key={`${row}-${index}`}
-                          className={
-                            index === 0
-                              ? 'cover-letter-credential-name'
-                              : 'cover-letter-credential-detail'
-                          }
-                        >
-                          {row}
-                        </span>
-                      ))}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="resume-summary-text">{identitySummary}</p>
-                )}
-              </section>
+                  ) : null}
+                  <span className="cover-letter-credential-copy">
+                    {credentialName ? (
+                      <span className="cover-letter-credential-name">{credentialName}</span>
+                    ) : null}
+                    {credentialDetail ? (
+                      <span className="cover-letter-credential-detail">{credentialDetail}</span>
+                    ) : null}
+                  </span>
+                </section>
+                <hr className="cover-letter-document-section-divider" />
+              </>
             ) : null}
 
             <section className="cover-letter-document-section">
-              <hr className="cover-letter-document-section-divider" />
               <div className="cover-letter-document-copy">
                 {dateLabel ? <p className="cover-letter-document-date">{dateLabel}</p> : null}
 
@@ -330,76 +202,7 @@ export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) =>
             margin: 0 !important;
           }
 
-          .resume-header {
-            margin-bottom: 0 !important;
-          }
-
-          .resume-header-top {
-            display: grid !important;
-            grid-template-columns: 50px 1fr !important;
-            align-items: center !important;
-            column-gap: var(--pdf-column-gap) !important;
-          }
-
-          .resume-header-portrait-frame {
-            width: 50px !important;
-            height: 50px !important;
-            border-radius: 9999px !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: none !important;
-            background: white !important;
-          }
-
-          .resume-header-portrait-image {
-            width: 50px !important;
-            height: 50px !important;
-            aspect-ratio: 1 / 1 !important;
-            object-fit: cover !important;
-            object-position: center 12% !important;
-          }
-
-          .resume-header-name {
-            font-family: var(--font-display) !important;
-            font-size: 20pt !important;
-            line-height: 1 !important;
-            letter-spacing: 0 !important;
-            font-weight: 700 !important;
-            font-feature-settings: 'kern' 1 !important;
-            text-rendering: optimizeLegibility !important;
-            margin: 0 !important;
-          }
-
-          .resume-header-role {
-            font-size: 7.4pt !important;
-            line-height: 1.2 !important;
-            margin-top: 4pt !important;
-            text-transform: uppercase !important;
-            letter-spacing: 1.4pt !important;
-            font-weight: 600 !important;
-            color: #475569 !important;
-          }
-
-          .resume-header-contact {
-            margin-top: var(--pdf-space-2) !important;
-            gap: 1pt var(--pdf-space-2) !important;
-            font-size: 7.7pt !important;
-            justify-content: flex-start !important;
-          }
-
-          .resume-header-contact a,
-          .resume-header-contact span {
-            font-size: 7.7pt !important;
-          }
-
-          .resume-contact-separator {
-            display: inline-block !important;
-            height: var(--pdf-space-4) !important;
-          }
-
-          .resume-header-divider {
-            margin-top: var(--pdf-space-2) !important;
-            border-top: 1px solid #cbd5e1 !important;
-          }
+          ${DOCUMENT_HEADER_PRINT_CSS}
 
           .resume-summary-section {
             margin-bottom: 0 !important;
@@ -425,11 +228,8 @@ export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) =>
           }
 
           .resume-summary-text {
-            font-size: 7.2pt !important;
-            line-height: 1.3 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 1.2pt !important;
-            font-weight: 600 !important;
+            font-size: 8.6pt !important;
+            line-height: 1.34 !important;
             color: #64748b !important;
           }
 

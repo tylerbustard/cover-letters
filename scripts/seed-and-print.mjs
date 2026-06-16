@@ -18,7 +18,10 @@ if (!process.env._RENDER_REEXEC) {
   process.exit(r.status ?? 1)
 }
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+const CHROME =
+  process.env.PUPPETEER_EXECUTABLE_PATH ||
+  process.env.CHROME_PATH ||
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const PORT = 5012
 const root = process.cwd()
 

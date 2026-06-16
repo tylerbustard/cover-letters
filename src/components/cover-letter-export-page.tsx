@@ -7,6 +7,19 @@ import { getAiProjectedTemplate, getStoredDocument, saveStoredDocument } from '@
 import { migrateCoverLetterState } from '@/lib/studio-migrations'
 import type { CoverLetterTemplate } from '@/types'
 
+const migrateLocalCoverLetterTemplate = (template: CoverLetterTemplate) => {
+  const migrated = migrateCoverLetterState({
+    selectedId: template.id,
+    templates: [template],
+  })
+  return (
+    migrated.state.templates.find((item) => item.id === template.id) ??
+    migrated.state.templates.find((item) => item.id === migrated.state.selectedId) ??
+    migrated.state.templates[0] ??
+    template
+  )
+}
+
 export const CoverLetterExportPage = () => {
   const [template, setTemplate] = useState<CoverLetterTemplate | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
@@ -36,7 +49,7 @@ export const CoverLetterExportPage = () => {
           if (!localTemplate) {
             setErrorMessage('Unable to load the local cover letter payload.')
           } else {
-            setTemplate(localTemplate)
+            setTemplate(migrateLocalCoverLetterTemplate(localTemplate))
           }
           return
         }

@@ -12,9 +12,9 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 const baseSummary =
   'Finance and technology professional with experience across portfolio monitoring, financial analysis, reconciliation, and data-driven reporting, combining analytical execution, strategic judgment, and client-focused communication.'
 
-const baseHeader = (email: string, website: string) => ({
+const baseHeader = (email: string, website: string, title = 'Finance & Technology') => ({
   name: 'Tyler Bustard',
-  title: 'Finance & Technology',
+  title,
   summary: baseSummary,
   profileSrc: assets.profileTyler,
   profileAlt: 'Tyler Bustard portrait',
@@ -444,25 +444,25 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
   {
     id: 'mcgill',
     label: 'McGill Resume',
-    description: 'McGill content preset in the unified studio style.',
+    description: 'McGill MBA 2026-2027 content preset in the unified studio style.',
     data: {
-      header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
+      header: baseHeader('tyler@tylerbustard.net', 'tylerbustard.net', 'MBA Candidate, 2026-2027'),
       education: [
         {
           id: 'education-mcgill',
-          degree: 'Master of Management in Finance Candidate',
+          degree: 'Master of Business Administration Candidate',
           program: 'Desautels Faculty of Management',
           school: 'McGill University',
-          date: '2025-2027',
+          date: '2026-2027',
           bullets: [
-            'Head of Risk Management for the Desautels Capital Management Fund and Chief Sustainability Officer for the SRI fund.',
-            'Recipient of two scholarships recognizing academic performance and leadership, totaling $13,000.',
+            'MBA Internship, non-thesis program through McGill Desautels Faculty of Management',
+            'Graduate management focus aligned with investment analysis, portfolio operations, capital markets, and technology-enabled reporting',
+            'Merit scholarship consideration based on the McGill MBA admissions profile; award amount not yet confirmed',
           ],
           logoSrc: assets.logoMcgillAlt,
           logoAlt: 'McGill University',
         },
         createUnbEducation(),
-        createNccEducation(),
       ],
       experience: buildExperienceGroups(true, '2022-2023'),
       certifications: { areas: clone(createCertificationAreas()) },

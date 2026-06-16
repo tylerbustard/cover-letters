@@ -511,6 +511,28 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
             affectsOutput: true,
           },
           {
+            key: 'credentialName',
+            fieldLabel: 'Education line',
+            valueType: 'string',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+          },
+          {
+            key: 'credentialDetail',
+            fieldLabel: 'Degree line',
+            valueType: 'string',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+          },
+          {
+            key: 'credentialLogoSrc',
+            fieldLabel: 'Education logo',
+            valueType: 'asset',
+            allowedOps: ['replaceField'],
+            affectsOutput: true,
+            assetSource: 'logos',
+          },
+          {
             key: 'profileSrc',
             fieldLabel: 'Portrait',
             valueType: 'asset',

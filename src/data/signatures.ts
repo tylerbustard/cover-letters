@@ -8,7 +8,7 @@ const baseSignature = {
   location: 'Toronto, Ontario',
   profileSrc: assets.profileTyler,
   profileAlt: 'Tyler Bustard portrait',
-  signoff: 'Best regards,',
+  signoff: 'Sincerely',
   logoTone: 'original' as const,
 }
 
@@ -18,8 +18,8 @@ const buildExperienceLogos = (): LogoAsset[] => [
   { src: assets.logoBmo, alt: 'BMO' },
   { src: assets.logoTd, alt: 'TD Bank' },
   { src: assets.logoRbc, alt: 'Royal Bank of Canada' },
-  { src: assets.logoIrving, alt: 'Irving Oil' },
   { src: assets.logoGrantThornton, alt: 'Grant Thornton' },
+  { src: assets.logoIrving, alt: 'Irving Oil' },
 ]
 
 const buildEducationLogos = (institutionLogo: string, institutionAlt: string): LogoAsset[] => {
@@ -81,14 +81,14 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
   {
     id: 'mcgill',
     label: 'McGill Signature',
-    description: 'McGill contact preset in the unified TylerBustard.com signature style.',
+    description: 'McGill MBA contact preset in the unified TylerBustard.net signature style.',
     data: createSignatureData(
-      'McGill University · Desautels Faculty of Management',
-      'tyler@tylerbustard.com',
-      'tylerbustard.com',
+      'McGill University - Desautels Faculty of Management',
+      'tyler@tylerbustard.net',
+      'tylerbustard.net',
       SIGNATURE_EDUCATION_LOGOS.mcgill,
-      '',
-      ['McGill University - Desautels Faculty of Management', 'Master of Management in Finance Candidate, 2027'],
+      'Master of Business Administration Candidate, 2026-2027',
+      ['McGill University - Desautels Faculty of Management', 'Master of Business Administration Candidate, 2026-2027'],
     ),
   },
   {

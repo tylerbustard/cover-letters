@@ -107,7 +107,7 @@ export const EmailSignaturePreview = ({ template }: EmailSignaturePreviewProps) 
   return (
     <div className="signature-document">
       <div className="signature-document-card">
-        <p className="signature-document-signoff">{data.signoff || 'Best regards,'}</p>
+        <p className="signature-document-signoff">{data.signoff || 'Sincerely'}</p>
 
         <div className="signature-document-main">
           <div className="signature-document-avatar-shell">

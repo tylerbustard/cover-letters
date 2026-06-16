@@ -1,0 +1,68 @@
+<!doctype html>
+<!-- Local print-verification harness (dev server only, not part of the app build).
+     Usage: /export-harness.html?doc=resume|cover-letter|signature-email[&template=queens] -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Export harness</title>
+  </head>
+  <body>
+    <script type="module">
+      const params = new URLSearchParams(location.search)
+      const doc = params.get('doc') || 'resume'
+      const templateId = params.get('template') || 'queens'
+
+      const encodePayload = (value) => {
+        const bytes = new TextEncoder().encode(JSON.stringify(value))
+        let binary = ''
+        bytes.forEach((b) => {
+          binary += String.fromCharCode(b)
+        })
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/u, '')
+      }
+
+      if (doc === 'editor-smoke') {
+        // Authed editor smoke test for local `netlify dev`: same-origin login via
+        // the real auth API, then load a studio route so a headless screenshot can
+        // capture the full editor UI.
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: params.get('u') ?? '',
+            password: params.get('p') ?? '',
+          }),
+        })
+        if (!response.ok) {
+          document.body.textContent = `LOGIN FAILED: ${response.status}`
+        } else {
+          location.replace(params.get('target') || '/studio/resume')
+        }
+      } else if (params.get('source') === 'stored') {
+        // Real stored-document test: a template JSON dropped at the project root is
+        // loaded through the localStorage local-export path (mirrors how the app
+        // hands off large payloads that exceed URL limits).
+        const response = await fetch(`/stored-${doc}-test.json`)
+        const template = await response.json()
+        localStorage.setItem(`studio-local-export:${doc}`, JSON.stringify(template))
+        location.replace(`/studio/${doc}/pdf?mode=local`)
+      } else if (doc === 'resume') {
+        const m = await import('/src/data/resumes.ts')
+        const template = m.RESUME_TEMPLATES.find((t) => t.id === templateId) ?? m.RESUME_TEMPLATES[0]
+        location.replace('/studio/resume/pdf?payload=' + encodePayload(template))
+      } else if (doc === 'cover-letter') {
+        const m = await import('/src/data/coverLetters.ts')
+        const template =
+          m.COVER_LETTER_TEMPLATES.find((t) => t.id === templateId) ?? m.COVER_LETTER_TEMPLATES[0]
+        location.replace('/studio/cover-letter/pdf?payload=' + encodePayload(template))
+      } else if (doc === 'signature-email') {
+        const data = await import('/src/data/signatures.ts')
+        const lib = await import('/src/lib/signature-html.ts')
+        const template =
+          data.SIGNATURE_TEMPLATES.find((t) => t.id === templateId) ?? data.SIGNATURE_TEMPLATES[0]
+        document.body.innerHTML = lib.buildSignatureHtmlFragment(template)
+        document.title = 'signature-email-ready'
+      }
+    </script>
+  </body>
+</html>

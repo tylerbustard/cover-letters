@@ -9,6 +9,21 @@
   --foreground: #e5edf7;
   --card: #ffffff;
   --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #dbeafe;
+  --accent-foreground: #1e3a8a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #cbd5e1;
+  --input: #cbd5e1;
+  --ring: #60a5fa;
   --radius: 1.5rem;
   --font-display: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-text: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1470,6 +1485,8 @@ select {
   display: flex;
   align-items: center;
   gap: 0.62rem;
+  width: 100%;
+  margin: 0.82rem 0 0.7rem;
 }
 
 .cover-letter-credential-logo-shell {
@@ -1891,7 +1908,7 @@ select {
 }
 
 .cover-letter-document-section {
-  margin: 0 0 var(--resume-screen-section-gap);
+  margin: 0.9rem 0 var(--resume-screen-section-gap);
 }
 
 .cover-letter-document-section-divider {
@@ -1991,8 +2008,8 @@ select {
 
 .signature-document-signoff {
   margin: 0;
-  font-family: var(--font-text);
-  font-size: 0.8rem;
+  font-family: 'Aptos', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
   line-height: 1.35;
   font-weight: 500;
   letter-spacing: 0;
@@ -2056,16 +2073,17 @@ select {
 
 .signature-document-role,
 .signature-document-affiliation-role {
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .signature-document-affiliation-institution {
-  font-weight: 500;
-  color: #334155;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .signature-document-affiliation-role {
   margin-top: 0.02rem;
+  color: #64748b;
 }
 
 .signature-document-organization {
@@ -2181,7 +2199,7 @@ select {
   opacity: 0.62;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1240px) {
   .studio-shell-header-bar {
     grid-template-columns: 1fr;
     justify-items: stretch;

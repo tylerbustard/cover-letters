@@ -7,8 +7,8 @@ export const SIGNATURE_EXPERIENCE_LOGO_VALUES = new Set([
   assets.logoBmo,
   assets.logoTd,
   assets.logoRbc,
-  assets.logoIrving,
   assets.logoGrantThornton,
+  assets.logoIrving,
 ])
 
 export const SIGNATURE_CERTIFICATION_LOGO_VALUES = new Set([
@@ -22,28 +22,34 @@ export const SIGNATURE_CERTIFICATION_LOGO_VALUES = new Set([
 ])
 
 export const SIGNATURE_EDUCATION_LOGO_VALUES: Record<SignatureId, Set<string>> = {
-  unb: new Set([assets.logoUnbFull]),
-  mcgill: new Set([assets.logoMcgillAlt, assets.logoUnbFull]),
-  queens: new Set([assets.logoQueensAlt, assets.logoUnbFull]),
-  rotman: new Set([assets.logoRotman, assets.logoUnbFull]),
-  strings: new Set([assets.logoUnbFull]),
+  unb: new Set([assets.logoUnb, assets.logoUnbFull]),
+  mcgill: new Set([assets.logoMcgillAlt, assets.logoUnb, assets.logoUnbFull]),
+  queens: new Set([assets.logoQueensAlt, assets.logoUnb, assets.logoUnbFull]),
+  rotman: new Set([assets.logoRotman, assets.logoUnb, assets.logoUnbFull]),
+  strings: new Set([assets.logoUnb, assets.logoUnbFull]),
 }
 
 const logoLabelByValue = new Map(logoOptions.map((option) => [option.value, option.label]))
+const logoOptionByValue = new Map(logoOptions.map((option) => [option.value, option]))
 
 export const canonicalizeSignatureLogoSrc = (src: string) => resolveStudioAssetSrc(src, src)
 
 export const getSignatureEducationLogoValues = (signatureId: SignatureId) =>
   SIGNATURE_EDUCATION_LOGO_VALUES[signatureId] ?? SIGNATURE_EDUCATION_LOGO_VALUES.unb
 
+const getLogoOptionsByValues = (values: Set<string>) =>
+  [...values]
+    .map((value) => logoOptionByValue.get(value))
+    .filter((option): option is (typeof logoOptions)[number] => Boolean(option))
+
 export const getSignatureExperienceLogoOptions = () =>
-  logoOptions.filter((option) => SIGNATURE_EXPERIENCE_LOGO_VALUES.has(option.value))
+  getLogoOptionsByValues(SIGNATURE_EXPERIENCE_LOGO_VALUES)
 
 export const getSignatureEducationLogoOptions = (signatureId: SignatureId) =>
-  logoOptions.filter((option) => getSignatureEducationLogoValues(signatureId).has(option.value))
+  getLogoOptionsByValues(getSignatureEducationLogoValues(signatureId))
 
 export const getSignatureCertificationLogoOptions = () =>
-  logoOptions.filter((option) => SIGNATURE_CERTIFICATION_LOGO_VALUES.has(option.value))
+  getLogoOptionsByValues(SIGNATURE_CERTIFICATION_LOGO_VALUES)
 
 export const normalizeSignatureLogos = (
   selected: LogoAsset[] = [],
@@ -51,6 +57,7 @@ export const normalizeSignatureLogos = (
 ): LogoAsset[] => {
   const seen = new Set<string>()
   const normalized: LogoAsset[] = []
+  const order = new Map([...allowedValues].map((value, index) => [value, index]))
 
   for (const logo of selected) {
     const src = canonicalizeSignatureLogoSrc(logo.src)
@@ -62,5 +69,5 @@ export const normalizeSignatureLogos = (
     })
   }
 
-  return normalized
+  return normalized.sort((a, b) => (order.get(a.src) ?? 0) - (order.get(b.src) ?? 0))
 }

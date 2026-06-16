@@ -125,15 +125,27 @@ const studioAssetRegistry: AssetRegistryEntry[] = [
   { src: logoRoi, monoSrc: monoLogoRoi, publicSrc: '/ai-assets/logos/roi.png', publicMonoSrc: '/ai-assets/logos/mono/roi.png', patterns: ['roi', legacyRoiSlug, legacyRoiUnderscore, legacyRoiDomain, legacyRoiAsset] },
 ]
 
+// Match patterns against the basename only (no directories, no extension).
+// Matching the full path lets short patterns collide with path segments —
+// e.g. 'ets' matches the "/assets/" directory and hijacks every legacy logo
+// whose registry entry sits after the ETS entry. Mirrors getAssetNeedle in
+// netlify/functions/_ai-utils.mjs.
 const getAssetNeedle = (value: string) => {
   const trimmed = value.trim()
   if (!trimmed) return ''
 
+  const toBasenameNeedle = (input: string) => {
+    const fileName = input.slice(input.lastIndexOf('/') + 1)
+    const dotIndex = fileName.lastIndexOf('.')
+    const stem = dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName
+    return decodeURIComponent(stem).toLowerCase()
+  }
+
   try {
     const url = new URL(trimmed, 'https://studio.local')
-    return decodeURIComponent(url.pathname).toLowerCase()
+    return toBasenameNeedle(url.pathname)
   } catch {
-    return decodeURIComponent(trimmed).toLowerCase()
+    return toBasenameNeedle(trimmed)
   }
 }
 

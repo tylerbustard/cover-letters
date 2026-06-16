@@ -33,6 +33,10 @@ export interface CoverLetterConfig {
   presetLabel: string
   tagline: string
   contextNote: string
+  credentialName: string
+  credentialDetail: string
+  credentialLogoSrc: string
+  credentialLogoAlt: string
   profileSrc: string
   profileAlt: string
   signatureSrc: string
