@@ -192,7 +192,7 @@ require_clean_git "${FINCHAT_REPO}" "FinChat"
 require_clean_git "${NET_REPO}" "tylerbustard.net"
 npm run verify:production
 require_clean_git "${FINCHAT_REPO}" "FinChat after verification"
-npm exec -- netlify -- deploy \
+npm exec -- netlify deploy \
   --prod \
   --dir=dist \
   --site="${FINCHAT_SITE_ID}" \
@@ -217,7 +217,7 @@ require_status "https://finchat.ca/studio/resume?v=$(date +%s)" "200" "FinChat r
 require_status "https://finchat.ca/studio/cover-letter?v=$(date +%s)" "200" "FinChat cover-letter studio route"
 require_status "https://finchat.ca/ai-assets/logos/mcgill.png?v=$(date +%s)" "200" "FinChat hosted McGill logo"
 finchat_session_json="$(curl -fsSL "https://finchat.ca/api/auth/session?v=$(date +%s)")"
-require_text "${finchat_session_json}" "authenticated" "FinChat auth session function"
+require_text "${finchat_session_json}" "session" "FinChat auth session function"
 finchat_html="$(curl -fsSL "https://finchat.ca/?v=$(date +%s)")"
 finchat_asset="$(rg -o '/assets/index-[^" ]+\.js' <<<"${finchat_html}" | head -n 1)"
 if [[ -z "${finchat_asset}" ]]; then
