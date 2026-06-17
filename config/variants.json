@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "2026-06-17-variation-matrix-v1",
+  "artifactDir": "output/print-qa/latest",
+  "maxArtifactAgeMinutes": 30,
+  "globalForbiddenText": [
+    "Master of Management in Finance",
+    "Peter Christoffersen",
+    "$13,000",
+    "Desautels Capital Management"
+  ],
+  "layoutTargets": {
+    "profile": {
+      "expectedPages": 2,
+      "minContentHeightRatio": 0.72,
+      "maxBottomWhitespaceRatio": 0.24,
+      "maxVerticalWhitespaceImbalance": 0.21,
+      "maxPageFillSpread": 0.2,
+      "minLeftMarginPx": 50,
+      "minRightMarginPx": 50,
+      "minTopMarginPx": 35,
+      "minBottomMarginPx": 35
+    },
+    "narrative": {
+      "expectedPages": 1,
+      "minContentHeightRatio": 0.86,
+      "maxBottomWhitespaceRatio": 0.09,
+      "maxVerticalWhitespaceImbalance": 0.06,
+      "maxPageFillSpread": 0,
+      "minLeftMarginPx": 70,
+      "minRightMarginPx": 70,
+      "minTopMarginPx": 50,
+      "minBottomMarginPx": 50
+    },
+    "identity": {
+      "maxRenderedHeightPx": 220,
+      "maxRenderedWidthPx": 720,
+      "minRenderedHeightPx": 90,
+      "minRenderedWidthPx": 480
+    }
+  },
+  "profile": {
+    "artifactPrefix": "resume",
+    "variants": {
+      "unb": {
+        "label": "UNB Profile",
+        "requiredText": [
+          "Tyler Bustard",
+          "Finance & Technology",
+          "tyler@tylerbustard.com",
+          "tylerbustard.com",
+          "University of New Brunswick",
+          "Bachelor of Business Administration, Finance",
+          "Senior Associate, Portfolio Monitoring"
+        ]
+      },
+      "queens": {
+        "label": "Queen's Profile",
+        "requiredText": [
+          "Tyler Bustard",
+          "Finance & Technology",
+          "tyler@tylerbustard.com",
+          "tylerbustard.com",
+          "Queen's University",
+          "Master of Finance Candidate",
+          "2026 - 2027",
+          "Senior Associate, Portfolio Monitoring"
+        ]
+      },
+      "mcgill": {
+        "label": "McGill Profile",
+        "requiredText": [
+          "Tyler Bustard",
+          "MBA Candidate, 2026-2027",
+          "tyler@tylerbustard.net",
+          "tylerbustard.net",
+          "McGill University",
+          "Master of Business Administration Candidate",
+          "Merit scholarship consideration",
+          "award amount not yet confirmed"
+        ],
+        "forbiddenText": [
+          "Northeast Christian College",
+          "tyler@tylerbustard.com",
+          "Master of Management",
+          "MMF"
+        ]
+      },
+      "rotman": {
+        "label": "Rotman Profile",
+        "requiredText": [
+          "Tyler Bustard",
+          "Finance & Technology",
+          "tyler@tylerbustard.info",
+          "tylerbustard.info",
+          "University of Toronto",
+          "Rotman School of Management",
+          "Master of Business Administration"
+        ]
+      }
+    }
+  },
+  "narrative": {
+    "artifactPrefix": "cover",
+    "variants": {
+      "queens": {
+        "label": "Queen's Narrative",
+        "requiredText": [
+          "Tyler Bustard",
+          "Finance & Technology",
+          "tyler@tylerbustard.com",
+          "Queen's University - Smith School of Business",
+          "Master of Finance Candidate, 2026-2027",
+          "Dear Hiring Manager,",
+          "Sincerely,"
+        ]
+      },
+      "unb": {
+        "label": "UNB Narrative",
+        "requiredText": [
+          "Tyler Bustard",
+          "Finance & Technology",
+          "tyler@tylerbustard.com",
+          "University of New Brunswick",
+          "Bachelor of Business Administration in Finance; Class of 2020",
+          "Dear Hiring Manager,",
+          "Sincerely,"
+        ]
+      },
+      "uoft": {
+        "label": "UofT Narrative",
+        "requiredText": [
+          "Tyler Bustard",
+          "Finance & Technology",
+          "tyler@tylerbustard.info",
+          "University of Toronto - Rotman School of Management",
+          "Master of Business Administration Candidate, 2026",
+          "Dear Hiring Manager,",
+          "Sincerely,"
+        ]
+      },
+      "mcgill": {
+        "label": "McGill Narrative",
+        "requiredText": [
+          "Tyler Bustard",
+          "MBA Candidate, 2026-2027",
+          "tyler@tylerbustard.net",
+          "McGill University - Desautels Faculty of Management",
+          "Master of Business Administration Candidate, 2026-2027",
+          "Dear Hiring Manager,",
+          "Sincerely,"
+        ],
+        "forbiddenText": [
+          "tyler@tylerbustard.com",
+          "Master of Management",
+          "MMF"
+        ]
+      }
+    }
+  },
+  "identity": {
+    "artifactPrefix": "signature",
+    "variants": {
+      "unb": {
+        "label": "UNB Identity",
+        "requiredText": [
+          "Sincerely",
+          "Tyler Bustard",
+          "tyler@tylerbustard.com",
+          "tylerbustard.com",
+          "University of New Brunswick",
+          "Bachelor of Business Administration in Finance; Class of 2020"
+        ]
+      },
+      "queens": {
+        "label": "Queen's Identity",
+        "requiredText": [
+          "Sincerely",
+          "Tyler Bustard",
+          "tyler@tylerbustard.com",
+          "tylerbustard.com",
+          "Queen's University - Smith School of Business",
+          "Master of Finance Candidate, 2026-2027"
+        ]
+      },
+      "mcgill": {
+        "label": "McGill Identity",
+        "requiredText": [
+          "Sincerely",
+          "Tyler Bustard",
+          "tyler@tylerbustard.net",
+          "tylerbustard.net",
+          "McGill University - Desautels Faculty of Management",
+          "Master of Business Administration Candidate, 2026-2027"
+        ],
+        "forbiddenText": [
+          "tyler@tylerbustard.com",
+          "Master of Management",
+          "MMF"
+        ]
+      },
+      "rotman": {
+        "label": "Rotman Identity",
+        "requiredText": [
+          "Sincerely",
+          "Tyler Bustard",
+          "tyler@tylerbustard.info",
+          "tylerbustard.info",
+          "University of Toronto - Rotman School of Management",
+          "Master of Business Administration Candidate, 2026"
+        ]
+      },
+      "strings": {
+        "label": "73 Strings Reference Identity",
+        "requiredText": [
+          "Sincerely",
+          "Tyler Bustard",
+          "tyler@tylerbustard.com",
+          "tylerbustard.com",
+          "73 Strings",
+          "Former Senior Associate, Portfolio Monitoring; Ended May 2026"
+        ]
+      }
+    },
+    "forbiddenText": [
+      "Best regards"
+    ]
+  }
+}

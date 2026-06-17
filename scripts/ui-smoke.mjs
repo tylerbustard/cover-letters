@@ -6,20 +6,44 @@
 // Usage: node scripts/ui-smoke.mjs
 // Artifacts: /tmp/studio-prints/ui-*.png / ui-*.pdf
 
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { spawn } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const puppeteer = require('puppeteer-core')
 
-const BASE = 'http://localhost:8888'
+const BASE = process.env.UI_SMOKE_BASE || 'http://localhost:8888'
+const BASE_URL = new URL(BASE)
+const BASE_PORT = BASE_URL.port || (BASE_URL.protocol === 'https:' ? '443' : '80')
+const BASE_TARGET_PORT = process.env.UI_SMOKE_TARGET_PORT || String(Number(BASE_PORT) + 1)
 const OUT = '/tmp/studio-prints'
+const PROJECT_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const CHROME =
   process.env.PUPPETEER_EXECUTABLE_PATH ||
   process.env.CHROME_PATH ||
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
 mkdirSync(OUT, { recursive: true })
+
+const clearLocalAuthRateLimit = () => {
+  for (const relativeRoot of [
+    '../.netlify/blobs-serve/entries',
+    '../.netlify/blobs-serve/metadata',
+  ]) {
+    const rootPath = fileURLToPath(new URL(relativeRoot, import.meta.url))
+    if (!existsSync(rootPath)) continue
+
+    for (const entry of readdirSync(rootPath, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue
+      rmSync(path.join(rootPath, entry.name, 'site:auth-rate-limit'), { recursive: true, force: true })
+    }
+  }
+}
+
+clearLocalAuthRateLimit()
 
 const env = Object.fromEntries(
   readFileSync(new URL('../.env', import.meta.url), 'utf8')
@@ -43,6 +67,68 @@ check('Chrome executable is available', existsSync(CHROME), CHROME)
 if (failures.length > 0) process.exit(1)
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const waitForLocalStack = async (timeoutMs) => {
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const response = await fetch(`${BASE}/sign-in`, { redirect: 'manual' })
+      if (response.ok) return true
+    } catch {}
+    await sleep(750)
+  }
+  return false
+}
+
+const ensureLocalStack = async () => {
+  if (await waitForLocalStack(1500)) return null
+
+  console.log(`Starting local Netlify stack at ${BASE} for UI smoke...`)
+  const child = spawn(
+    'npm',
+    [
+      'exec',
+      '--',
+      'netlify',
+      'dev',
+      '--offline',
+      '--no-open',
+      '--port',
+      BASE_PORT,
+      '--target-port',
+      BASE_TARGET_PORT,
+    ],
+    {
+      cwd: PROJECT_ROOT,
+      env: { ...process.env, PORT: BASE_TARGET_PORT },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  )
+
+  const tail = []
+  const remember = (chunk) => {
+    const text = chunk.toString()
+    tail.push(text)
+    if (tail.length > 24) tail.shift()
+    if (process.env.QA_UI_DEBUG === '1') process.stdout.write(text)
+  }
+  child.stdout.on('data', remember)
+  child.stderr.on('data', remember)
+
+  if (await waitForLocalStack(90000)) return child
+
+  child.kill('SIGTERM')
+  throw new Error(`Unable to start local Netlify stack at ${BASE}.\n${tail.join('')}`)
+}
+
+const stopLocalStack = async (child) => {
+  if (!child) return
+  child.kill('SIGTERM')
+  await Promise.race([
+    new Promise((resolve) => child.once('exit', resolve)),
+    sleep(2500).then(() => child.kill('SIGKILL')),
+  ])
+}
 
 // Click the button whose visible text matches (buttons are not labelled with ids).
 const clickButton = async (page, text) => {
@@ -135,6 +221,7 @@ const captureExportTab = async (browser, page, expectedUrlPart, outFile, readySe
   return { headerRole, url: exportUrl }
 }
 
+const devServer = await ensureLocalStack()
 const browser = await puppeteer.launch({
   executablePath: CHROME,
   headless: 'shell',
@@ -206,7 +293,36 @@ try {
   await page.type('#username', env.ADMIN_USERNAME)
   await page.type('#password', env.ADMIN_PASSWORD)
   await clickButton(page, 'Enter studio')
-  await page.waitForSelector('.resume-header-name', { timeout: 20000 })
+  const loginReachedStudio = await page
+    .waitForSelector('.resume-header-name', { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!loginReachedStudio) {
+    const loginDiagnostic = await page.evaluate(async () => {
+      const username = document.querySelector('#username')?.value ?? ''
+      const password = document.querySelector('#password')?.value ?? ''
+      const loginProbe = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      }).catch(() => null)
+      const loginProbeText = loginProbe ? await loginProbe.text().catch(() => '') : ''
+      const sessionResponse = await fetch('/api/auth/session').catch(() => null)
+      const sessionText = sessionResponse ? await sessionResponse.text().catch(() => '') : ''
+      return {
+        url: window.location.href,
+        bodyText: document.body.innerText.slice(0, 800),
+        loginProbeStatus: loginProbe?.status ?? null,
+        loginProbeText: loginProbeText.slice(0, 400),
+        usernameLength: username.length,
+        passwordLength: password.length,
+        sessionStatus: sessionResponse?.status ?? null,
+        sessionText: sessionText.slice(0, 400),
+      }
+    })
+    check('login reaches studio after submit', false, JSON.stringify(loginDiagnostic))
+    throw new Error('Login did not reach the studio; see diagnostic check above.')
+  }
   check('sign-in form logs in and lands on /studio/resume', page.url().includes('/studio/resume'))
   const activeTabSemantics = await page.$eval('.studio-nav-button-active', (button) => ({
     ariaCurrent: button.getAttribute('aria-current'),
@@ -409,6 +525,7 @@ try {
   await runAuthRateLimitSmoke()
 } finally {
   await browser.close()
+  await stopLocalStack(devServer)
 }
 
 console.log('\n--- console errors during run ---')
