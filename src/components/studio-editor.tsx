@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import profileTyler from '@/assets/profile-tyler.png'
+import finchatLogo from '@/assets/finchat-logo.svg'
 import { logoOptions, profileOptions, signatureOptions } from '@/data/assets'
 import {
   applyAiReviewDraft,
@@ -1347,14 +1347,19 @@ export function StudioEditor({
           <div className="studio-brand">
             <div className="studio-brand-mark">
               <img
-                src={profileTyler}
-                alt="Tyler Bustard portrait"
+                src={finchatLogo}
+                alt="FinChat"
                 className="studio-brand-mark-image"
               />
             </div>
             <div className="studio-brand-copy">
-              <p className="studio-brand-kicker">Private Document Studio</p>
-              <h1 className="studio-brand-title">Tyler Bustard</h1>
+              <p className="studio-brand-kicker">FinChat Workspace</p>
+              <h1 className="studio-brand-title">Document Intelligence</h1>
+              <div className="studio-brand-signals" aria-label="Workspace controls">
+                <span><ShieldCheck size={12} /> QA gated</span>
+                <span><Layers size={12} /> Profile mapped</span>
+                <span><FileText size={12} /> Export ready</span>
+              </div>
             </div>
           </div>
 
@@ -1381,6 +1386,13 @@ export function StudioEditor({
 
           <div className="studio-shell-actions">
             <p className="studio-shell-status" role="status" aria-live="polite">
+              <span
+                className={cn(
+                  'studio-shell-status-dot',
+                  isHydrating ? 'studio-shell-status-dot-active' : undefined,
+                )}
+                aria-hidden="true"
+              />
               {isHydrating ? 'Syncing saved documents…' : statusMessage || `Signed in as ${session.username}`}
             </p>
             <div className="studio-shell-action-row">

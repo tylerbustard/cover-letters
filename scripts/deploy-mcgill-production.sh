@@ -62,7 +62,11 @@ const env = Object.fromEntries(
   readFileSync('.env', 'utf8')
     .split('\n')
     .filter((line) => line.includes('='))
-    .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
+    .map((line) => {
+      const separatorIndex = line.indexOf('=')
+      return [line.slice(0, separatorIndex).trim(), line.slice(separatorIndex + 1).replace(/\r$/u, '')]
+    })
+    .filter(([key]) => key.length > 0),
 )
 
 const response = await fetch(url, {

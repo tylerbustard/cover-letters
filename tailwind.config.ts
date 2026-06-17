@@ -47,7 +47,7 @@ export default {
       },
       fontFamily: {
         sans: ["'Space Grotesk'", "'Segoe UI'", "sans-serif"],
-        display: ["'Space Grotesk'", "'Segoe UI'", "sans-serif"],
+        display: ["'Archivo'", "'Segoe UI'", "sans-serif"],
       },
     },
   },

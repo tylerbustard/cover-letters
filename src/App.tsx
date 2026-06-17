@@ -1,5 +1,15 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { ArrowRight, LockKeyhole } from 'lucide-react'
+import {
+  ArrowRight,
+  BarChart3,
+  Database,
+  FileCheck2,
+  LineChart,
+  LockKeyhole,
+  Network,
+  ShieldCheck,
+  Workflow,
+} from 'lucide-react'
 import { Redirect, useLocation } from 'wouter'
 
 import { CoverLetterExportPage } from '@/components/cover-letter-export-page'
@@ -14,6 +24,18 @@ import { getSession, login, logout } from '@/lib/studio-api'
 import type { DocumentType, StudioSession } from '@/types'
 
 const DOCUMENT_TYPES: DocumentType[] = ['resume', 'cover-letter', 'email-signature']
+
+const authMarketCards = [
+  { label: 'Document set', value: '3 docs', detail: 'Resume, cover, signature' },
+  { label: 'Export gate', value: 'PDF/HTML', detail: 'Print and inbox ready' },
+  { label: 'Tenant', value: 'Private', detail: 'Authenticated workspace' },
+]
+
+const authPipelineItems = [
+  { label: 'Extract', value: 'Credentials', icon: Database },
+  { label: 'Monitor', value: 'Draft quality', icon: Network },
+  { label: 'Value', value: 'Ready outputs', icon: FileCheck2 },
+]
 
 const getDocumentTypeFromLocation = (location: string): DocumentType | null => {
   const match = location.match(/^\/studio\/(resume|cover-letter|email-signature)$/)
@@ -51,25 +73,93 @@ const SignInPage = ({
   <main className="studio-auth-page">
     <section className="studio-auth-panel">
       <div className="studio-auth-intro">
-        <p className="studio-brand-kicker">FinChat</p>
-        <h1 className="studio-auth-title">Financial Intelligence Platform</h1>
+        <div className="studio-auth-brand-row">
+          <div className="studio-auth-logo-lockup">
+            <div className="studio-auth-logo-mark">
+              <img
+                src={finchatLogo}
+                alt="FinChat"
+                className="studio-brand-mark-image"
+              />
+            </div>
+            <div>
+              <p className="studio-brand-kicker">FinChat</p>
+              <p className="studio-auth-product-line">Document Intelligence OS</p>
+            </div>
+          </div>
+          <span className="studio-auth-live-pill">
+            <span aria-hidden="true" />
+            Live QA
+          </span>
+        </div>
+
+        <h1 className="studio-auth-title">Financial document intelligence.</h1>
         <p className="studio-auth-copy">
-          Secure access to financial analytics, document automation, and reporting tools.
-          Enterprise-grade workspace for finance professionals.
+          Controlled resume, cover letter, and signature automation with source-aware
+          profiles, audit checks, and export-ready HTML/PDF.
         </p>
+
+        <div className="studio-auth-product-grid" aria-label="FinChat workspace preview">
+          <div className="studio-auth-terminal">
+            <div className="studio-auth-terminal-top">
+              <div className="studio-auth-window-controls" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+              <span>FINCHAT TERMINAL</span>
+              <strong>QA PASS</strong>
+            </div>
+
+            <div className="studio-auth-market-grid">
+              {authMarketCards.map((card) => (
+                <div key={card.label} className="studio-auth-market-card">
+                  <p>{card.label}</p>
+                  <strong>{card.value}</strong>
+                  <span>{card.detail}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="studio-auth-terminal-checks">
+              <div>
+                <p>Control ledger</p>
+                <strong>Current workspace checks</strong>
+              </div>
+              <div className="studio-auth-check-list">
+                <span>Identity fields <strong>Mapped</strong></span>
+                <span>Education presets <strong>Versioned</strong></span>
+                <span>Signature assets <strong>Ready</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="studio-auth-flow">
+            {authPipelineItems.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="studio-auth-flow-item">
+                <span className="studio-auth-flow-icon">
+                  <Icon size={16} />
+                </span>
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="studio-auth-highlights" aria-label="Platform capabilities">
-          <span>Analytics</span>
-          <span>Reports</span>
-          <span>Documents</span>
+          <span><BarChart3 size={15} /> Analytics</span>
+          <span><Workflow size={15} /> Automation</span>
+          <span><ShieldCheck size={15} /> Audit trail</span>
         </div>
         <div className="studio-auth-meta">
           <div>
-            <p className="studio-auth-meta-label">Platform</p>
-            <p className="studio-auth-meta-value">Secure financial workspace</p>
+            <p className="studio-auth-meta-label">Workspace</p>
+            <p className="studio-auth-meta-value">Financial profile operations</p>
           </div>
           <div>
-            <p className="studio-auth-meta-label">Output</p>
-            <p className="studio-auth-meta-value">Export-ready financial documents</p>
+            <p className="studio-auth-meta-label">Controls</p>
+            <p className="studio-auth-meta-value">Saved presets and export gates</p>
           </div>
         </div>
       </div>
@@ -80,9 +170,10 @@ const SignInPage = ({
             <LockKeyhole />
           </div>
           <div>
-            <p className="studio-auth-form-title">Sign in</p>
-            <p className="studio-auth-form-copy">Use your admin credentials to open the studio.</p>
+            <p className="studio-auth-form-title">Secure access</p>
+            <p className="studio-auth-form-copy">Authorized FinChat workspace</p>
           </div>
+          <LineChart className="studio-auth-form-signal" aria-hidden="true" />
         </div>
 
         <div className="space-y-5">
@@ -90,7 +181,7 @@ const SignInPage = ({
             <Label htmlFor="username" className="studio-field-label">
               Username
             </Label>
-            <Input id="username" name="username" autoComplete="username" required />
+            <Input id="username" name="username" autoComplete="username" autoCapitalize="none" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="studio-field-label">
