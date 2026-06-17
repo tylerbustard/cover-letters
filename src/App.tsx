@@ -71,8 +71,11 @@ const SignInPage = ({
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>
 }) => (
   <main className="studio-auth-page">
-    <section className="studio-auth-panel">
-      <div className="studio-auth-intro">
+    <section className="studio-auth-panel" aria-labelledby="studio-auth-title">
+      <a className="studio-skip-link" href="#studio-sign-in-form">
+        Skip to sign in
+      </a>
+      <div className="studio-auth-intro" aria-describedby="studio-auth-copy">
         <div className="studio-auth-brand-row">
           <div className="studio-auth-logo-lockup">
             <div className="studio-auth-logo-mark">
@@ -93,8 +96,8 @@ const SignInPage = ({
           </span>
         </div>
 
-        <h1 className="studio-auth-title">Financial document intelligence.</h1>
-        <p className="studio-auth-copy">
+        <h1 id="studio-auth-title" className="studio-auth-title">Financial document intelligence.</h1>
+        <p id="studio-auth-copy" className="studio-auth-copy">
           Controlled resume, cover letter, and signature automation with source-aware
           profiles, audit checks, and export-ready HTML/PDF.
         </p>
@@ -164,7 +167,13 @@ const SignInPage = ({
         </div>
       </div>
 
-      <form className="studio-auth-form" onSubmit={(event) => void onSubmit(event)}>
+      <form
+        id="studio-sign-in-form"
+        className="studio-auth-form"
+        aria-label="Sign in to FinChat"
+        aria-busy={isSubmitting}
+        onSubmit={(event) => void onSubmit(event)}
+      >
         <div className="studio-auth-form-header">
           <div className="studio-auth-icon">
             <LockKeyhole />
@@ -181,18 +190,41 @@ const SignInPage = ({
             <Label htmlFor="username" className="studio-field-label">
               Username
             </Label>
-            <Input id="username" name="username" autoComplete="username" autoCapitalize="none" required />
+            <Input
+              id="username"
+              name="username"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-invalid={errorMessage ? true : undefined}
+              aria-describedby={errorMessage ? 'studio-auth-error' : undefined}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="studio-field-label">
               Password
             </Label>
-            <Input id="password" name="password" type="password" autoComplete="current-password" required />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              aria-invalid={errorMessage ? true : undefined}
+              aria-describedby={errorMessage ? 'studio-auth-error' : undefined}
+              required
+            />
           </div>
         </div>
 
         <div className="studio-auth-actions">
-          {errorMessage ? <p className="studio-auth-error">{errorMessage}</p> : <span />}
+          {errorMessage ? (
+            <p id="studio-auth-error" className="studio-auth-error" role="alert">
+              {errorMessage}
+            </p>
+          ) : (
+            <span className="studio-auth-error-placeholder" aria-hidden="true" />
+          )}
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Enter studio'}
             <ArrowRight />

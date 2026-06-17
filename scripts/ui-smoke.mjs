@@ -154,11 +154,40 @@ try {
 
   // ---- Sign in through the real form ----
   await page.goto(`${BASE}/sign-in`, { waitUntil: 'networkidle2' })
+  const authSemantics = await page.evaluate(() => ({
+    formLabel: document.querySelector('#studio-sign-in-form')?.getAttribute('aria-label'),
+    panelLabelledBy: document.querySelector('.studio-auth-panel')?.getAttribute('aria-labelledby'),
+    titleExists: Boolean(document.querySelector('#studio-auth-title')),
+    usernameAutocomplete: document.querySelector('#username')?.getAttribute('autocomplete'),
+  }))
+  check(
+    'sign-in exposes accessible form semantics',
+    authSemantics.formLabel === 'Sign in to FinChat' &&
+      authSemantics.panelLabelledBy === 'studio-auth-title' &&
+      authSemantics.titleExists &&
+      authSemantics.usernameAutocomplete === 'username',
+    JSON.stringify(authSemantics),
+  )
+  await page.keyboard.press('Tab')
+  check(
+    'skip link is the first keyboard target',
+    await page.evaluate(() => document.activeElement?.classList.contains('studio-skip-link') === true),
+  )
+  await page.focus('#username')
   await page.type('#username', env.ADMIN_USERNAME)
   await page.type('#password', env.ADMIN_PASSWORD)
   await clickButton(page, 'Enter studio')
   await page.waitForSelector('.resume-header-name', { timeout: 20000 })
   check('sign-in form logs in and lands on /studio/resume', page.url().includes('/studio/resume'))
+  const activeTabSemantics = await page.$eval('.studio-nav-button-active', (button) => ({
+    ariaCurrent: button.getAttribute('aria-current'),
+    type: button.getAttribute('type'),
+  }))
+  check(
+    'active document tab exposes current page state',
+    activeTabSemantics.ariaCurrent === 'page' && activeTabSemantics.type === 'button',
+    JSON.stringify(activeTabSemantics),
+  )
 
   // ---- Resume: live preview reacts to edits ----
   const originalTitle = await textOf(page, '.resume-header-role')

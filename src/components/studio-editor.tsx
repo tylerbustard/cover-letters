@@ -1363,7 +1363,7 @@ export function StudioEditor({
             </div>
           </div>
 
-          <nav className="studio-nav">
+          <nav className="studio-nav" aria-label="Document type">
             {(
               [
                 { id: 'resume', label: 'Resume' },
@@ -1373,7 +1373,9 @@ export function StudioEditor({
             ).map((tab) => (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => handleDocumentTypeChange(tab.id)}
+                aria-current={documentType === tab.id ? 'page' : undefined}
                 className={cn(
                   'studio-nav-button',
                   documentType === tab.id ? 'studio-nav-button-active' : 'studio-nav-button-idle',

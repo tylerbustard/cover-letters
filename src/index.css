@@ -96,6 +96,29 @@ select {
   overflow-x: hidden;
 }
 
+.studio-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(calc(-100% - 1rem));
+  padding: 0.62rem 0.78rem;
+  border-radius: 0.48rem;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28);
+  transition: transform 160ms ease;
+}
+
+.studio-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+
 .studio-shell::before {
   content: '';
   position: fixed;
@@ -184,7 +207,7 @@ select {
 }
 
 .studio-brand-kicker {
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 .studio-brand-title {
@@ -242,6 +265,13 @@ select {
     color 180ms ease,
     border-color 180ms ease,
     box-shadow 180ms ease;
+}
+
+.studio-nav-button:focus-visible,
+.studio-shell-action-row button:focus-visible,
+.studio-auth-actions button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .studio-nav-button-idle {
@@ -311,6 +341,23 @@ select {
   50% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .studio-shell-status-dot-active {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -1126,7 +1173,7 @@ select {
 .studio-auth-market-card p,
 .studio-auth-terminal-checks p {
   margin: 0;
-  color: rgba(226, 232, 240, 0.58);
+  color: rgba(226, 232, 240, 0.7);
   font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -1226,7 +1273,7 @@ select {
 }
 
 .studio-auth-flow-item > span:not(.studio-auth-flow-icon) {
-  color: rgba(226, 232, 240, 0.56);
+  color: rgba(226, 232, 240, 0.68);
   font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -1281,7 +1328,7 @@ select {
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.54);
+  color: rgba(226, 232, 240, 0.7);
 }
 
 .studio-auth-meta-value {
@@ -1354,8 +1401,17 @@ select {
   color: #fecaca;
 }
 
+.studio-auth-error-placeholder {
+  min-width: 0;
+}
+
 .studio-auth-form .studio-field-label {
   color: rgba(226, 232, 240, 0.72);
+}
+
+.studio-auth-form input[aria-invalid='true'] {
+  border-color: #fca5a5;
+  box-shadow: 0 0 0 1px rgba(252, 165, 165, 0.55);
 }
 
 .studio-boot {
