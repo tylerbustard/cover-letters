@@ -1,7 +1,7 @@
 // End-to-end UI smoke test: drives the real editor in a browser against a local
 // `netlify dev` stack (port 8888, local blobs sandbox — production data is never
 // touched). Verifies that the UI itself works and that what it PRODUCES (live
-// preview, Export PDF tabs, signature HTML) reflects the edits made through it.
+// preview, Export PDF tabs, and HTML output) reflects the edits made through it.
 //
 // Usage: node scripts/ui-smoke.mjs
 // Artifacts: /tmp/studio-prints/ui-*.png / ui-*.pdf
@@ -173,6 +173,35 @@ try {
     'skip link is the first keyboard target',
     await page.evaluate(() => document.activeElement?.classList.contains('studio-skip-link') === true),
   )
+  const firstModuleValue = await textOf(page, '.studio-auth-market-card strong')
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll('.studio-auth-module-tab')].find((entry) =>
+      entry.textContent.includes('Review Queue'),
+    )
+    button?.click()
+  })
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll('.studio-auth-module-tab')].some(
+        (entry) => entry.textContent.includes('Review Queue') && entry.getAttribute('aria-pressed') === 'true',
+      ),
+    { timeout: 5000 },
+  )
+  const modulePreview = await page.evaluate((firstValue) => {
+    const activeButton = [...document.querySelectorAll('.studio-auth-module-tab')].find((entry) =>
+      entry.textContent.includes('Review Queue'),
+    )
+    return {
+      firstValue,
+      nextValue: document.querySelector('.studio-auth-market-card strong')?.textContent?.trim(),
+      ariaPressed: activeButton?.getAttribute('aria-pressed'),
+    }
+  }, firstModuleValue)
+  check(
+    'auth preview module tabs update workspace terminal',
+    modulePreview.firstValue !== modulePreview.nextValue && modulePreview.ariaPressed === 'true',
+    JSON.stringify(modulePreview),
+  )
   await page.focus('#username')
   await page.type('#username', env.ADMIN_USERNAME)
   await page.type('#password', env.ADMIN_PASSWORD)
@@ -189,7 +218,7 @@ try {
     JSON.stringify(activeTabSemantics),
   )
 
-  // ---- Resume: live preview reacts to edits ----
+  // ---- Profile: live preview reacts to edits ----
   const originalTitle = await textOf(page, '.resume-header-role')
   check('resume preview shows header title', Boolean(originalTitle), `"${originalTitle}"`)
 
@@ -201,9 +230,9 @@ try {
     (await textOf(page, '.resume-header-role')) === probeTitle,
   )
 
-  // ---- Resume: save flow ----
+  // ---- Profile: save flow ----
   await clickButton(page, 'Save')
-  check('Save shows "Resume saved." status', await waitForStatus(page, 'Resume saved.'))
+  check('Save shows "Profile saved." status', await waitForStatus(page, 'Profile saved.'))
 
   const storedTitle = await page.evaluate(async () => {
     const response = await fetch('/api/documents/resume', { credentials: 'include' })
@@ -214,7 +243,7 @@ try {
   })
   check('saved resume title reaches document storage', storedTitle.title === probeTitle, JSON.stringify(storedTitle))
 
-  // ---- Resume: Export PDF produces a tab containing the edit ----
+  // ---- Profile: Export PDF produces a tab containing the edit ----
   const exportedResume = await captureExportTab(
     browser,
     page,
@@ -225,12 +254,12 @@ try {
   check('Export PDF tab uses local handoff', exportedResume.url.includes('mode=local'), exportedResume.url)
   check('Export PDF tab renders the edited title', exportedResume.headerRole === probeTitle, `"${exportedResume.headerRole}"`)
 
-  // ---- Resume: revert the probe edit ----
+  // ---- Profile: revert the probe edit ----
   await retypeInput(page, probeTitle, originalTitle)
   await clickButton(page, 'Save')
-  check('revert + save restores original title', await waitForStatus(page, 'Resume saved.'))
+  check('revert + save restores original title', await waitForStatus(page, 'Profile saved.'))
 
-  // ---- Resume: template preset switching ----
+  // ---- Profile: template preset switching ----
   const presetSelect = await page.$('select')
   const firstLabel = await textOf(page, '.studio-preview-shell .resume-header-role')
   await presetSelect.select('unb')
@@ -244,8 +273,8 @@ try {
     (await textOf(page, '.resume-header-role')) === firstLabel,
   )
 
-  // ---- Cover letter tab ----
-  await clickButton(page, 'Cover Letter')
+  // ---- Narrative tab ----
+  await clickButton(page, 'Narrative')
   await page.waitForSelector('.cover-letter-document-greeting', { timeout: 15000 })
   const greeting = await textOf(page, '.cover-letter-document-greeting')
   check('cover letter preview renders greeting', Boolean(greeting), `"${greeting}"`)
@@ -270,8 +299,8 @@ try {
   check('cover letter Export PDF tab uses local handoff', exportedCoverLetter.url.includes('mode=local'), exportedCoverLetter.url)
   check('cover letter Export PDF tab renders', exportedCoverLetter.headerRole !== null, `role="${exportedCoverLetter.headerRole}"`)
 
-  // ---- Email signature tab ----
-  await clickButton(page, 'Email Signature')
+  // ---- Identity tab ----
+  await clickButton(page, 'Identity')
   await page.waitForSelector('.signature-document-name', { timeout: 15000 })
 
   const weights = await page.evaluate(() => {
@@ -292,7 +321,7 @@ try {
   const getSignatureHtml = () => page.$eval('textarea[readonly]', (node) => node.value)
   const htmlBefore = await getSignatureHtml()
   check(
-    'produced signature HTML uses new hierarchy styling',
+    'produced identity HTML uses new hierarchy styling',
     htmlBefore.includes('font-weight:600') && htmlBefore.includes('#1e293b'),
   )
 
@@ -327,7 +356,7 @@ try {
     ((await getSignatureHtml()).match(/logos\//g) || []).length === logoCountBefore,
   )
 
-  // "Copy Signature" pipes the same payload to the clipboard; intercept the write.
+  // "Copy HTML" pipes the same payload to the clipboard; intercept the write.
   await page.evaluate(() => {
     window.__copied = null
     navigator.clipboard.write = async (items) => {
@@ -338,11 +367,11 @@ try {
       window.__copied = text
     }
   })
-  await clickButton(page, 'Copy Signature')
+  await clickButton(page, 'Copy HTML')
   await sleep(500)
   const copied = await page.evaluate(() => window.__copied)
   check(
-    'Copy Signature copies the signature fragment',
+    'Copy HTML copies the identity fragment',
     Boolean(copied) && copied.includes('font-weight:600'),
     copied ? `${copied.length} chars` : 'nothing captured',
   )

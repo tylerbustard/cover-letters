@@ -416,7 +416,7 @@ const buildExperienceGroups = (hasFiscal: boolean, bmoDate: string) => {
 export const RESUME_TEMPLATES: ResumeTemplate[] = [
   {
     id: 'unb',
-    label: 'UNB Resume',
+    label: 'UNB Profile',
     description: 'University of New Brunswick content preset aligned to TylerBustard.com.',
     data: {
       header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
@@ -428,7 +428,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
   },
   {
     id: 'queens',
-    label: "Queen's Resume",
+    label: "Queen's Profile",
     description: "Queen's MFin 2026-2027 package aligned to TylerBustard.com.",
     data: {
       header: baseHeader('tyler@tylerbustard.com', 'tylerbustard.com'),
@@ -443,7 +443,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
   },
   {
     id: 'mcgill',
-    label: 'McGill Resume',
+    label: 'McGill Profile',
     description: 'McGill MBA 2026-2027 content preset in the unified studio style.',
     data: {
       header: baseHeader('tyler@tylerbustard.net', 'tylerbustard.net', 'MBA Candidate, 2026-2027'),
@@ -471,7 +471,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
   },
   {
     id: 'rotman',
-    label: 'Rotman Resume',
+    label: 'Rotman Profile',
     description: 'Rotman content preset in the unified studio style.',
     data: {
       header: baseHeader('tyler@tylerbustard.info', 'tylerbustard.info'),

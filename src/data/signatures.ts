@@ -67,8 +67,8 @@ export const SIGNATURE_EDUCATION_LOGOS = {
 export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
   {
     id: 'unb',
-    label: 'UNB Signature',
-    description: 'UNB contact preset in the unified TylerBustard.com signature style.',
+    label: 'UNB Identity',
+    description: 'UNB contact preset in the unified TylerBustard.com identity style.',
     data: createSignatureData(
       'University of New Brunswick',
       'tyler@tylerbustard.com',
@@ -80,8 +80,8 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
   },
   {
     id: 'mcgill',
-    label: 'McGill Signature',
-    description: 'McGill MBA contact preset in the unified TylerBustard.net signature style.',
+    label: 'McGill Identity',
+    description: 'McGill MBA contact preset in the unified TylerBustard.net identity style.',
     data: createSignatureData(
       'McGill University - Desautels Faculty of Management',
       'tyler@tylerbustard.net',
@@ -93,8 +93,8 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
   },
   {
     id: 'queens',
-    label: "Queen's Signature",
-    description: "Queen's contact preset in the unified TylerBustard.com signature style.",
+    label: "Queen's Identity",
+    description: "Queen's contact preset in the unified TylerBustard.com identity style.",
     data: createSignatureData(
       "Queen's University · Smith School of Business",
       'tyler@tylerbustard.com',
@@ -106,8 +106,8 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
   },
   {
     id: 'rotman',
-    label: 'Rotman Signature',
-    description: 'Rotman contact preset in the unified TylerBustard.com signature style.',
+    label: 'Rotman Identity',
+    description: 'Rotman contact preset in the unified TylerBustard.com identity style.',
     data: createSignatureData(
       'University of Toronto · Rotman School of Management',
       'tyler@tylerbustard.info',
@@ -119,7 +119,7 @@ export const SIGNATURE_TEMPLATES: EmailSignatureTemplate[] = [
   },
   {
     id: 'strings',
-    label: '73 Strings Reference Signature',
+    label: '73 Strings Reference Identity',
     description: 'Past 73 Strings role preset using TylerBustard.com contact details.',
     data: createSignatureData(
       '73 Strings (ended May 2026)',

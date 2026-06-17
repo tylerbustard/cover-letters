@@ -37,7 +37,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
   },
   documents: {
     resume: {
-      displayName: 'Resume',
+      displayName: 'Profile',
       sections: [
         {
           id: 'header',
@@ -52,7 +52,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         {
           id: 'education',
           label: 'Education',
-          description: 'White editorial entries matching the public resume system.',
+          description: 'White editorial entries matching the public profile system.',
         },
         {
           id: 'primary-experience',
@@ -67,12 +67,12 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         {
           id: 'grouped-certifications',
           label: 'Grouped certifications',
-          description: 'Public-resume style certification areas with editorial headings.',
+          description: 'Public-profile style certification areas with editorial headings.',
         },
         {
           id: 'community',
           label: 'Community',
-          description: 'Community entries now match the public resume structure.',
+          description: 'Community entries now match the public profile structure.',
         },
       ],
       lockedRules: [
@@ -460,7 +460,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
       ],
     },
     'cover-letter': {
-      displayName: 'Cover letter',
+      displayName: 'Narrative',
       sections: [
         {
           id: 'template',
@@ -671,12 +671,12 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
       collectionTemplates: [],
     },
     'email-signature': {
-      displayName: 'Email signature',
+      displayName: 'Identity',
       sections: [
         {
           id: 'template',
           label: 'Template',
-          description: 'Unified signature styling with content presets only.',
+          description: 'Unified identity styling with content presets only.',
         },
         {
           id: 'identity',
@@ -686,7 +686,7 @@ export const STUDIO_EDIT_SCHEMA: StudioEditSchema = {
         {
           id: 'html',
           label: 'HTML',
-          description: 'Copy or download the production-ready signature HTML.',
+          description: 'Copy or download the production-ready identity HTML.',
         },
       ],
       lockedRules: [

@@ -41,6 +41,7 @@ import {
   buildSignaturePlainText,
 } from '@/lib/signature-html'
 import { getLocalExportStorageKey } from '@/lib/local-export'
+import { studioModuleLabels, studioProductLabels } from '@/lib/studio-labels'
 import {
   SIGNATURE_CERTIFICATION_LOGO_VALUES,
   SIGNATURE_EXPERIENCE_LOGO_VALUES,
@@ -483,19 +484,19 @@ export function StudioEditor({
   const previewMeta = useMemo(
     () => ({
       resume: {
-        kicker: 'Resume Studio',
+        kicker: studioModuleLabels.resume.kicker,
         title: selectedResume.label,
-        copy: 'Editorial preview and export tuned to the TylerBustard.com resume system.',
+        copy: 'Structured profile data, role positioning, and controlled review in one editable workspace.',
       },
       'cover-letter': {
-        kicker: 'Cover Letter Studio',
+        kicker: studioModuleLabels['cover-letter'].kicker,
         title: selectedCoverLetter.config.presetLabel || selectedCoverLetter.label,
-        copy: 'Unified application letter styling with a cleaner hierarchy and print-ready structure.',
+        copy: 'Role-specific narrative controls with a cleaner hierarchy and release-ready structure.',
       },
       'email-signature': {
-        kicker: 'Email Signature Studio',
+        kicker: studioModuleLabels['email-signature'].kicker,
         title: selectedSignature.label,
-        copy: 'Grouped experience and education logo strips, updated typography, and production-ready HTML export.',
+        copy: 'Contact identity, affiliation hierarchy, visual assets, and production-ready HTML delivery.',
       },
     }),
     [selectedCoverLetter.config.presetLabel, selectedCoverLetter.label, selectedResume.label, selectedSignature.label],
@@ -506,7 +507,7 @@ export function StudioEditor({
       : documentType === 'cover-letter'
         ? selectedCoverLetter.config.presetLabel || selectedCoverLetter.label
         : selectedSignature.label
-  const activeOutputLabel = documentType === 'email-signature' ? 'HTML signature' : 'PDF document'
+  const activeOutputLabel = studioModuleLabels[documentType].outputLabel
   const activeFieldMap = useMemo(
     () => buildStudioFieldMap(documentType, activeTemplate),
     [activeTemplate, documentType],
@@ -692,21 +693,21 @@ export function StudioEditor({
       if (documentType === 'resume') {
         await saveStoredDocument('resume', { selectedId: resumeId, templates: resumeTemplates })
         await loadAiReview('resume', selectedResume.id)
-        pushStatusMessage('Resume saved.')
+        pushStatusMessage(studioModuleLabels.resume.savedMessage)
       } else if (documentType === 'cover-letter') {
         await saveStoredDocument('cover-letter', {
           selectedId: coverLetterId,
           templates: coverLetters,
         })
         await loadAiReview('cover-letter', selectedCoverLetter.id)
-        pushStatusMessage('Cover letter saved.')
+        pushStatusMessage(studioModuleLabels['cover-letter'].savedMessage)
       } else {
         await saveStoredDocument('email-signature', {
           selectedId: signatureId,
           templates: signatureTemplates,
         })
         await loadAiReview('email-signature', selectedSignature.id)
-        pushStatusMessage('Email signature saved.')
+        pushStatusMessage(studioModuleLabels['email-signature'].savedMessage)
       }
     } catch (error) {
       pushStatusMessage(error instanceof Error ? error.message : 'Unable to save right now.', 3400)
@@ -730,11 +731,13 @@ export function StudioEditor({
           window.location.assign(exportUrl)
         }
 
-        pushStatusMessage('Resume PDF ready to save.')
+        pushStatusMessage(studioModuleLabels.resume.pdfReadyMessage ?? 'PDF ready to save.')
       } catch (error) {
         exportWindow?.close()
         pushStatusMessage(
-          error instanceof Error ? error.message : 'Unable to prepare the resume PDF right now.',
+          error instanceof Error
+            ? error.message
+            : studioModuleLabels.resume.pdfErrorMessage ?? 'Unable to prepare the PDF right now.',
           3400,
         )
       }
@@ -762,11 +765,13 @@ export function StudioEditor({
           window.location.assign(exportUrl)
         }
 
-        pushStatusMessage('Cover letter PDF ready to save.')
+        pushStatusMessage(studioModuleLabels['cover-letter'].pdfReadyMessage ?? 'PDF ready to save.')
       } catch (error) {
         exportWindow?.close()
         pushStatusMessage(
-          error instanceof Error ? error.message : 'Unable to prepare the cover letter PDF right now.',
+          error instanceof Error
+            ? error.message
+            : studioModuleLabels['cover-letter'].pdfErrorMessage ?? 'Unable to prepare the PDF right now.',
           3400,
         )
       }
@@ -792,14 +797,14 @@ export function StudioEditor({
             'text/plain': new Blob([signaturePlainText], { type: 'text/plain;charset=utf-8' }),
           }),
         ])
-        pushStatusMessage('Signature copied as rich HTML.')
+        pushStatusMessage('HTML block copied as rich HTML.')
         return
       }
 
       await navigator.clipboard.writeText(signaturePlainText)
-      pushStatusMessage('Signature copied as plain text fallback.')
+      pushStatusMessage('HTML block copied as plain text fallback.')
     } catch {
-      pushStatusMessage('Unable to copy signature HTML right now.', 3200)
+      pushStatusMessage('Unable to copy the HTML block right now.', 3200)
     }
   }
 
@@ -1353,8 +1358,8 @@ export function StudioEditor({
               />
             </div>
             <div className="studio-brand-copy">
-              <p className="studio-brand-kicker">FinChat Workspace</p>
-              <h1 className="studio-brand-title">Document Intelligence</h1>
+              <p className="studio-brand-kicker">{studioProductLabels.workspaceKicker}</p>
+              <h1 className="studio-brand-title">{studioProductLabels.workspaceTitle}</h1>
               <div className="studio-brand-signals" aria-label="Workspace controls">
                 <span><ShieldCheck size={12} /> QA gated</span>
                 <span><Layers size={12} /> Profile mapped</span>
@@ -1363,12 +1368,12 @@ export function StudioEditor({
             </div>
           </div>
 
-          <nav className="studio-nav" aria-label="Document type">
+          <nav className="studio-nav" aria-label="Workspace module">
             {(
               [
-                { id: 'resume', label: 'Resume' },
-                { id: 'cover-letter', label: 'Cover Letter' },
-                { id: 'email-signature', label: 'Email Signature' },
+                { id: 'resume', label: studioModuleLabels.resume.nav },
+                { id: 'cover-letter', label: studioModuleLabels['cover-letter'].nav },
+                { id: 'email-signature', label: studioModuleLabels['email-signature'].nav },
               ] as const
             ).map((tab) => (
               <button
@@ -1395,7 +1400,7 @@ export function StudioEditor({
                 )}
                 aria-hidden="true"
               />
-              {isHydrating ? 'Syncing saved documents…' : statusMessage || `Signed in as ${session.username}`}
+              {isHydrating ? 'Syncing saved workspace...' : statusMessage || `Signed in as ${session.username}`}
             </p>
             <div className="studio-shell-action-row">
               <Button onClick={handleSaveDocument} variant="outline" disabled={isHydrating || isSaving}>
@@ -1407,7 +1412,7 @@ export function StudioEditor({
                     <Download /> Download .html
                   </Button>
                   <Button onClick={handleCopySignatureHtml} variant="outline" disabled={isHydrating}>
-                    <Mail /> Copy Signature
+                    <Mail /> Copy HTML
                   </Button>
                 </>
               ) : (
@@ -1443,7 +1448,7 @@ export function StudioEditor({
           {documentType === 'resume' && (
             <>
               <EditorSection title="Template" description="Presets now control content only. Styling stays unified.">
-                <Field label="Resume Preset">
+                <Field label="Profile preset">
                   <select
                     value={resumeId}
                     onChange={(event) => setResumeId(event.target.value as ResumeId)}
@@ -1512,7 +1517,7 @@ export function StudioEditor({
                 </InlineFields>
               </EditorSection>
 
-              <EditorSection title="Education" description="White editorial entries matching the public resume system.">
+              <EditorSection title="Education" description="White editorial entries matching the public profile system.">
                 {selectedResume.data.education.map((item, index) => (
                   <ItemCard key={item.id} title={item.degree} onRemove={() => removeEducationItem(index)}>
                     <InlineFields>
@@ -1695,7 +1700,7 @@ export function StudioEditor({
                 ))}
               </EditorSection>
 
-              <EditorSection title="Grouped certifications" description="Public-resume style certification areas with editorial headings.">
+              <EditorSection title="Grouped certifications" description="Public-profile style certification areas with editorial headings.">
                 {selectedResume.data.certifications.areas.map((area, areaIndex) => (
                   <ItemCard key={area.id} title={area.title} onRemove={() => removeCertificationArea(areaIndex)}>
                     <InlineFields>
@@ -1784,7 +1789,7 @@ export function StudioEditor({
                 </Button>
               </EditorSection>
 
-              <EditorSection title="Community" description="Community entries now match the public resume structure.">
+              <EditorSection title="Community" description="Community entries now match the public profile structure.">
                 {selectedResume.data.leadership.map((group, groupIndex) => (
                   <ItemCard key={group.id} title={group.title || 'Community group'}>
                     <InlineFields>
@@ -1877,7 +1882,7 @@ export function StudioEditor({
           {documentType === 'cover-letter' && (
             <>
               <EditorSection title="Template" description="Presets change sender defaults and context, not the visual system.">
-                <Field label="Cover letter preset">
+                <Field label="Narrative preset">
                   <select
                     value={coverLetterId}
                     onChange={(event) => setCoverLetterId(event.target.value as CoverLetterId)}
@@ -2042,8 +2047,8 @@ export function StudioEditor({
 
           {documentType === 'email-signature' && (
             <>
-              <EditorSection title="Template" description="Unified signature styling with content presets only.">
-                <Field label="Signature preset">
+              <EditorSection title="Template" description="Unified identity styling with content presets only.">
+                <Field label="Identity preset">
                   <select
                     value={signatureId}
                     onChange={(event) => setSignatureId(event.target.value as SignatureId)}
@@ -2151,7 +2156,7 @@ export function StudioEditor({
                 </Field>
               </EditorSection>
 
-              <EditorSection title="HTML" description="Copy or download the production-ready signature HTML.">
+              <EditorSection title="HTML" description="Copy or download the production-ready identity HTML.">
                 <Textarea value={signatureHtml} readOnly rows={10} />
               </EditorSection>
             </>
@@ -2159,7 +2164,7 @@ export function StudioEditor({
 
           <EditorSection
             title="AI Draft Review"
-            description="AI can propose reviewed edits against the customizable document schema. Review the exact diffs here before anything is applied."
+            description="AI can propose reviewed edits against the customizable workspace schema. Review the exact diffs here before anything is applied."
           >
             {isLoadingAiReview ? (
               <p className="studio-ai-review-copy">Loading AI review state…</p>
