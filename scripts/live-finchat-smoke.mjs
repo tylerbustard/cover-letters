@@ -55,6 +55,36 @@ const inspectPage = (page) =>
     }
   })
 
+const waitForImagesSettled = (page) =>
+  page.evaluate(async () => {
+    const images = [...document.images]
+    await Promise.all(
+      images.map((image) => {
+        if (image.complete) return Promise.resolve()
+        return new Promise((resolve) => {
+          const done = () => resolve()
+          const timeout = window.setTimeout(done, 8000)
+          image.addEventListener(
+            'load',
+            () => {
+              window.clearTimeout(timeout)
+              done()
+            },
+            { once: true },
+          )
+          image.addEventListener(
+            'error',
+            () => {
+              window.clearTimeout(timeout)
+              done()
+            },
+            { once: true },
+          )
+        })
+      }),
+    )
+  })
+
 const checkSecurityHeaders = async (path, label) => {
   const response = await fetch(`${BASE}${path}?v=${Date.now()}`)
   const headers = response.headers
@@ -77,6 +107,7 @@ const checkSecurityHeaders = async (path, label) => {
 const openStudioRoute = async (page, route, selector, expectedText) => {
   await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle2', timeout: 45000 })
   await page.waitForSelector(selector, { timeout: 30000 })
+  await waitForImagesSettled(page)
   const snapshot = await inspectPage(page)
   check(`${route} renders React app`, snapshot.rootChildren > 0, `root children=${snapshot.rootChildren}`)
   check(`${route} has no broken images`, snapshot.brokenImages.length === 0, snapshot.brokenImages.join(', '))
@@ -122,6 +153,7 @@ try {
   await page.type('#password', env.ADMIN_PASSWORD)
   await clickButton(page, 'Enter studio')
   await page.waitForSelector('.resume-header-name', { timeout: 30000 })
+  await waitForImagesSettled(page)
 
   const signedInSnapshot = await inspectPage(page)
   check('live sign-in lands in the resume studio', page.url().includes('/studio/resume'), page.url())
