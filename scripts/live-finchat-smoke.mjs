@@ -121,6 +121,23 @@ const openStudioRoute = async (page, route, selector, expectedText) => {
   }
 }
 
+const openPublicRoute = async (page, route, selector, expectedText) => {
+  await page.goto(`${BASE}${route}?v=${Date.now()}`, { waitUntil: 'networkidle2', timeout: 45000 })
+  await page.waitForSelector(selector, { timeout: 30000 })
+  await waitForImagesSettled(page)
+  const snapshot = await inspectPage(page)
+  check(`${route} renders public React app`, snapshot.rootChildren > 0, `root children=${snapshot.rootChildren}`)
+  check(`${route} has no broken images`, snapshot.brokenImages.length === 0, snapshot.brokenImages.join(', '))
+  check(
+    `${route} has no horizontal overflow`,
+    snapshot.scrollWidth <= snapshot.clientWidth + 2,
+    `${snapshot.scrollWidth}/${snapshot.clientWidth}`,
+  )
+  for (const text of expectedText) {
+    check(`${route} contains "${text}"`, snapshot.text.includes(text))
+  }
+}
+
 check('Chrome executable is available', existsSync(CHROME), CHROME)
 check('ADMIN_USERNAME is configured', Boolean(env.ADMIN_USERNAME))
 check('ADMIN_PASSWORD is configured', Boolean(env.ADMIN_PASSWORD))
@@ -147,6 +164,11 @@ try {
   page.on('requestfailed', (request) => {
     browserEvents.push(`requestfailed: ${request.url()} ${request.failure()?.errorText}`)
   })
+
+  await openPublicRoute(page, '/brand-guidelines', '.fc-guide-hero', [
+    'Brand guidelines',
+    'Simple, financial, controlled.',
+  ])
 
   await page.goto(`${BASE}/sign-in`, { waitUntil: 'networkidle2', timeout: 45000 })
   await page.type('#username', env.ADMIN_USERNAME)

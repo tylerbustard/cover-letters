@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import finchatLogo from '@/assets/finchat-logo.svg'
+import finchatMark from '@/assets/finchat-mark.svg'
 import { logoOptions, profileOptions, signatureOptions } from '@/data/assets'
 import {
   applyAiReviewDraft,
@@ -1352,7 +1352,7 @@ export function StudioEditor({
           <div className="studio-brand">
             <div className="studio-brand-mark">
               <img
-                src={finchatLogo}
+                src={finchatMark}
                 alt="FinChat"
                 className="studio-brand-mark-image"
               />

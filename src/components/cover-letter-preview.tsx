@@ -261,7 +261,7 @@ export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) =>
           .cover-letter-credential-name {
             font-size: 8.6pt !important;
             font-weight: 600 !important;
-            letter-spacing: 0.2pt !important;
+            letter-spacing: 0 !important;
             color: #1e293b !important;
             line-height: 1.18 !important;
           }
@@ -269,7 +269,7 @@ export const CoverLetterPreview = ({ data, config }: CoverLetterPreviewProps) =>
           .cover-letter-credential-detail {
             font-size: 7.6pt !important;
             font-weight: 400 !important;
-            letter-spacing: 0.2pt !important;
+            letter-spacing: 0 !important;
             color: #64748b !important;
             line-height: 1.22 !important;
             margin-top: 1pt !important;

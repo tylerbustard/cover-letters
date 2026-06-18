@@ -243,52 +243,32 @@ try {
   await page.goto(`${BASE}/sign-in`, { waitUntil: 'networkidle2' })
   const authSemantics = await page.evaluate(() => ({
     formLabel: document.querySelector('#studio-sign-in-form')?.getAttribute('aria-label'),
-    panelLabelledBy: document.querySelector('.studio-auth-panel')?.getAttribute('aria-labelledby'),
     titleExists: Boolean(document.querySelector('#studio-auth-title')),
     usernameAutocomplete: document.querySelector('#username')?.getAttribute('autocomplete'),
+    brandLogoLoaded: document.querySelector('.fc-brand-logo')?.complete === true &&
+      document.querySelector('.fc-brand-logo')?.naturalWidth > 0,
+    productCards: document.querySelectorAll('.fc-product-card').length,
+    guidelinesHref: document.querySelector('a[href="/brand-guidelines"]')?.textContent?.trim(),
   }))
   check(
-    'sign-in exposes accessible form semantics',
+    'sign-in exposes simplified brand and form semantics',
     authSemantics.formLabel === 'Sign in to FinChat' &&
-      authSemantics.panelLabelledBy === 'studio-auth-title' &&
       authSemantics.titleExists &&
-      authSemantics.usernameAutocomplete === 'username',
+      authSemantics.usernameAutocomplete === 'username' &&
+      authSemantics.brandLogoLoaded &&
+      authSemantics.productCards === 3 &&
+      authSemantics.guidelinesHref === 'Brand guidelines',
     JSON.stringify(authSemantics),
   )
   await page.keyboard.press('Tab')
   check(
     'skip link is the first keyboard target',
-    await page.evaluate(() => document.activeElement?.classList.contains('studio-skip-link') === true),
+    await page.evaluate(() => document.activeElement?.classList.contains('fc-skip-link') === true),
   )
-  const firstModuleValue = await textOf(page, '.studio-auth-market-card strong')
-  await page.evaluate(() => {
-    const button = [...document.querySelectorAll('.studio-auth-module-tab')].find((entry) =>
-      entry.textContent.includes('Review Queue'),
-    )
-    button?.click()
-  })
-  await page.waitForFunction(
-    () =>
-      [...document.querySelectorAll('.studio-auth-module-tab')].some(
-        (entry) => entry.textContent.includes('Review Queue') && entry.getAttribute('aria-pressed') === 'true',
-      ),
-    { timeout: 5000 },
-  )
-  const modulePreview = await page.evaluate((firstValue) => {
-    const activeButton = [...document.querySelectorAll('.studio-auth-module-tab')].find((entry) =>
-      entry.textContent.includes('Review Queue'),
-    )
-    return {
-      firstValue,
-      nextValue: document.querySelector('.studio-auth-market-card strong')?.textContent?.trim(),
-      ariaPressed: activeButton?.getAttribute('aria-pressed'),
-    }
-  }, firstModuleValue)
-  check(
-    'auth preview module tabs update workspace terminal',
-    modulePreview.firstValue !== modulePreview.nextValue && modulePreview.ariaPressed === 'true',
-    JSON.stringify(modulePreview),
-  )
+  check('brand guidelines route is public', await page.evaluate(async () => {
+    const response = await fetch('/brand-guidelines', { redirect: 'manual' })
+    return response.ok
+  }))
   await page.focus('#username')
   await page.type('#username', env.ADMIN_USERNAME)
   await page.type('#password', env.ADMIN_PASSWORD)
