@@ -218,6 +218,18 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className="fc-builder-strip" aria-labelledby="fc-builder-title">
+        <div>
+          <p className="fc-kicker">Behind the platform</p>
+          <h2 id="fc-builder-title">Built from finance, education, and automation workflows.</h2>
+        </div>
+        <p>
+          FinChat is shaped around source-linked profile data, review gates, and exact
+          delivery for high-stakes career materials where formatting, credentials, and
+          institutional context have to stay consistent.
+        </p>
+      </section>
+
       <section className="fc-final-cta">
         <div>
           <p className="fc-kicker">Private access</p>

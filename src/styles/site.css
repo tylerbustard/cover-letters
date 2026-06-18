@@ -946,6 +946,36 @@
   font-size: 13px;
 }
 
+.fc-builder-strip {
+  width: min(1180px, calc(100% - 40px));
+  margin: 28px auto 0;
+  border: 1px solid var(--fc-line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 30px 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 32px;
+  align-items: center;
+}
+
+.fc-builder-strip h2 {
+  margin: 10px 0 0;
+  color: var(--fc-ink);
+  font-family: "Inter Tight", Inter, system-ui, sans-serif;
+  font-size: 30px;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.fc-builder-strip p:last-child {
+  margin: 0;
+  color: var(--fc-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 .fc-final-cta {
   width: min(1180px, calc(100% - 40px));
   margin: 58px auto 0;
@@ -1083,7 +1113,8 @@
   .fc-palette-grid,
   .fc-rule-list,
   .fc-logo-cloud,
-  .fc-control-section {
+  .fc-control-section,
+  .fc-builder-strip {
     grid-template-columns: 1fr;
   }
 
@@ -1120,6 +1151,7 @@
   .fc-logo-cloud,
   .fc-metrics-band,
   .fc-control-section,
+  .fc-builder-strip,
   .fc-final-cta,
   .fc-footer {
     width: min(100% - 28px, 1120px);
@@ -1170,6 +1202,7 @@
   .fc-login-card,
   .fc-control-copy,
   .fc-control-panel,
+  .fc-builder-strip,
   .fc-final-cta {
     padding: 24px;
   }
