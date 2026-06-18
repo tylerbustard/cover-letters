@@ -165,6 +165,12 @@ try {
     browserEvents.push(`requestfailed: ${request.url()} ${request.failure()?.errorText}`)
   })
 
+  await openPublicRoute(page, '/', '.fc-hero', [
+    'Financial document intelligence',
+    'Source graph',
+    'Three surfaces',
+  ])
+
   await openPublicRoute(page, '/brand-guidelines', '.fc-guide-hero', [
     'Brand guidelines',
     'Simple, financial, controlled.',

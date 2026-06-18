@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { ArrowRight, FileSignature, FileText, Mail, ShieldCheck } from 'lucide-react'
+import { ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react'
 
 import finchatLogo from '@/assets/finchat-logo.svg'
 import finchatMark from '@/assets/finchat-mark.svg'
@@ -10,22 +10,10 @@ type SignInPageProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>
 }
 
-const productSurfaces = [
-  {
-    icon: FileText,
-    title: 'Profile',
-    copy: 'Resume variants checked for spacing, dates, credentials, and export quality.',
-  },
-  {
-    icon: FileSignature,
-    title: 'Narrative',
-    copy: 'Cover and CV-style outputs aligned to the selected school, role, and voice.',
-  },
-  {
-    icon: Mail,
-    title: 'Identity',
-    copy: 'Email signatures with controlled logos, contact details, and HTML export.',
-  },
+const accessRows = [
+  ['Source graph', 'Mapped'],
+  ['Review gate', 'Online'],
+  ['Exports', 'Controlled'],
 ]
 
 export function SignInPage({ isSubmitting, errorMessage, onSubmit }: SignInPageProps) {
@@ -45,31 +33,33 @@ export function SignInPage({ isSubmitting, errorMessage, onSubmit }: SignInPageP
       </header>
 
       <section className="fc-signin-grid" aria-labelledby="studio-auth-title">
-        <div className="fc-intro-panel">
-          <p className="fc-kicker">Private document intelligence</p>
-          <h1 id="studio-auth-title">
-            Finance-ready documents, controlled from one workspace.
-          </h1>
-          <p className="fc-lead">
-            FinChat keeps resumes, CV-style narratives, and email signatures aligned
-            to the same source of truth before anything is copied, downloaded, or
-            printed.
-          </p>
-
-          <div className="fc-product-grid" aria-label="FinChat product surfaces">
-            {productSurfaces.map(({ icon: Icon, title, copy }) => (
-              <article className="fc-product-card" key={title}>
-                <span className="fc-product-icon">
-                  <Icon aria-hidden="true" />
-                </span>
-                <div>
-                  <h2>{title}</h2>
-                  <p>{copy}</p>
-                </div>
-              </article>
-            ))}
+        <aside className="fc-access-panel">
+          <div>
+            <p className="fc-kicker">Private access</p>
+            <h1 id="studio-auth-title">Secure studio for controlled document intelligence.</h1>
+            <p>
+              Sign in to manage profile data, narrative assets, identity HTML, and
+              production-ready delivery gates.
+            </p>
           </div>
-        </div>
+
+          <div className="fc-access-terminal" aria-label="Workspace status">
+            <div className="fc-terminal-bar">
+              <span />
+              <span />
+              <span />
+              <strong>FINCHAT SESSION</strong>
+            </div>
+            <div className="fc-control-list">
+              {accessRows.map(([label, value]) => (
+                <div key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
 
         <form
           id="studio-sign-in-form"
@@ -126,8 +116,12 @@ export function SignInPage({ isSubmitting, errorMessage, onSubmit }: SignInPageP
           </button>
 
           <p className="fc-security-note">
-            <ShieldCheck aria-hidden="true" />
+            <LockKeyhole aria-hidden="true" />
             Session secured for private document work.
+          </p>
+          <p className="fc-security-note fc-security-note-secondary">
+            <ShieldCheck aria-hidden="true" />
+            Credentials verified through the FinChat auth layer.
           </p>
         </form>
       </section>

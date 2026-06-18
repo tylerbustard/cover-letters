@@ -3,6 +3,7 @@ import { Redirect, useLocation } from 'wouter'
 
 import { CoverLetterExportPage } from '@/components/cover-letter-export-page'
 import { BrandGuidelinesPage } from '@/components/brand-guidelines-page'
+import { HomePage } from '@/components/home-page'
 import { ResumeExportPage } from '@/components/resume-export-page'
 import { StudioEditor } from '@/components/studio-editor'
 import { SignInPage } from '@/components/sign-in-page'
@@ -122,9 +123,12 @@ export default function App() {
     return <BootSplash />
   }
 
-  // The sign-in screen is the default public front end.
   if (!session) {
-    if (location !== '/' && location !== '/sign-in') {
+    if (location === '/') {
+      return <HomePage />
+    }
+
+    if (location !== '/sign-in') {
       return <Redirect to="/sign-in" />
     }
 

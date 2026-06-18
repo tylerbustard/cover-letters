@@ -239,6 +239,29 @@ try {
     consoleErrors.push(`console: ${text}`)
   })
 
+  // ---- Public homepage and sign-in surface ----
+  await page.goto(`${BASE}/`, { waitUntil: 'networkidle2' })
+  const homeSemantics = await page.evaluate(() => ({
+    heroTitle: document.querySelector('#fc-hero-title')?.textContent?.trim(),
+    logoLoaded: document.querySelector('.fc-brand-logo')?.complete === true &&
+      document.querySelector('.fc-brand-logo')?.naturalWidth > 0,
+    sourceLogos: document.querySelectorAll('.fc-logo-tile img').length,
+    productCards: document.querySelectorAll('.fc-product-card-large').length,
+    signInHref: document.querySelector('a[href="/sign-in"]')?.textContent?.trim(),
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }))
+  check(
+    'homepage exposes company-grade FinChat surface',
+    homeSemantics.heroTitle?.includes('Financial document intelligence') &&
+      homeSemantics.logoLoaded &&
+      homeSemantics.sourceLogos >= 8 &&
+      homeSemantics.productCards === 3 &&
+      homeSemantics.signInHref?.includes('Sign in') &&
+      homeSemantics.scrollWidth <= homeSemantics.clientWidth + 2,
+    JSON.stringify(homeSemantics),
+  )
+
   // ---- Sign in through the real form ----
   await page.goto(`${BASE}/sign-in`, { waitUntil: 'networkidle2' })
   const authSemantics = await page.evaluate(() => ({
@@ -247,16 +270,16 @@ try {
     usernameAutocomplete: document.querySelector('#username')?.getAttribute('autocomplete'),
     brandLogoLoaded: document.querySelector('.fc-brand-logo')?.complete === true &&
       document.querySelector('.fc-brand-logo')?.naturalWidth > 0,
-    productCards: document.querySelectorAll('.fc-product-card').length,
+    accessRows: document.querySelectorAll('.fc-access-terminal .fc-control-list div').length,
     guidelinesHref: document.querySelector('a[href="/brand-guidelines"]')?.textContent?.trim(),
   }))
   check(
-    'sign-in exposes simplified brand and form semantics',
+    'sign-in exposes private access form semantics',
     authSemantics.formLabel === 'Sign in to FinChat' &&
       authSemantics.titleExists &&
       authSemantics.usernameAutocomplete === 'username' &&
       authSemantics.brandLogoLoaded &&
-      authSemantics.productCards === 3 &&
+      authSemantics.accessRows === 3 &&
       authSemantics.guidelinesHref === 'Brand guidelines',
     JSON.stringify(authSemantics),
   )

@@ -24,13 +24,18 @@ export function BrandGuidelinesPage() {
   return (
     <main className="fc-page fc-guidelines">
       <header className="fc-topbar">
-        <a className="fc-brand-lockup" href="/sign-in" aria-label="FinChat sign in">
+        <a className="fc-brand-lockup" href="/" aria-label="FinChat home">
           <img className="fc-brand-logo" src={finchatLogo} alt="FinChat.ca" />
         </a>
-        <a className="fc-text-link" href="/sign-in">
-          <ArrowLeft aria-hidden="true" />
-          Studio sign in
-        </a>
+        <div className="fc-guide-actions">
+          <a className="fc-text-link" href="/">
+            <ArrowLeft aria-hidden="true" />
+            Home
+          </a>
+          <a className="fc-button fc-button-primary" href="/sign-in">
+            Studio sign in
+          </a>
+        </div>
       </header>
 
       <section className="fc-guide-hero">
