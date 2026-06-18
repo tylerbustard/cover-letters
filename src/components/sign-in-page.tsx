@@ -27,9 +27,6 @@ export function SignInPage({ isSubmitting, errorMessage, onSubmit }: SignInPageP
         <a className="fc-brand-lockup" href="/sign-in" aria-label="FinChat home">
           <img className="fc-brand-logo" src={finchatLogo} alt="FinChat.ca" />
         </a>
-        <a className="fc-text-link" href="/brand-guidelines">
-          Brand guidelines
-        </a>
       </header>
 
       <section className="fc-signin-grid" aria-labelledby="studio-auth-title">

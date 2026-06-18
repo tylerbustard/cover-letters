@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useState } from 'react'
 import { Redirect, useLocation } from 'wouter'
 
 import { CoverLetterExportPage } from '@/components/cover-letter-export-page'
-import { BrandGuidelinesPage } from '@/components/brand-guidelines-page'
 import { HomePage } from '@/components/home-page'
 import { ResumeExportPage } from '@/components/resume-export-page'
 import { StudioEditor } from '@/components/studio-editor'
@@ -87,10 +86,6 @@ export default function App() {
 
   if (isLocalCoverLetterExport) {
     return <CoverLetterExportPage />
-  }
-
-  if (location === '/brand-guidelines') {
-    return <BrandGuidelinesPage />
   }
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {

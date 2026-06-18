@@ -271,7 +271,7 @@ try {
     brandLogoLoaded: document.querySelector('.fc-brand-logo')?.complete === true &&
       document.querySelector('.fc-brand-logo')?.naturalWidth > 0,
     accessRows: document.querySelectorAll('.fc-access-terminal .fc-control-list div').length,
-    guidelinesHref: document.querySelector('a[href="/brand-guidelines"]')?.textContent?.trim(),
+    hasBrandGuidelinesLink: Boolean(document.querySelector('a[href="/brand-guidelines"]')),
   }))
   check(
     'sign-in exposes private access form semantics',
@@ -280,7 +280,7 @@ try {
       authSemantics.usernameAutocomplete === 'username' &&
       authSemantics.brandLogoLoaded &&
       authSemantics.accessRows === 3 &&
-      authSemantics.guidelinesHref === 'Brand guidelines',
+      !authSemantics.hasBrandGuidelinesLink,
     JSON.stringify(authSemantics),
   )
   await page.keyboard.press('Tab')
@@ -288,10 +288,14 @@ try {
     'skip link is the first keyboard target',
     await page.evaluate(() => document.activeElement?.classList.contains('fc-skip-link') === true),
   )
-  check('brand guidelines route is public', await page.evaluate(async () => {
-    const response = await fetch('/brand-guidelines', { redirect: 'manual' })
-    return response.ok
-  }))
+  await page.goto(`${BASE}/brand-guidelines`, { waitUntil: 'networkidle2' })
+  check(
+    'brand guidelines route is removed from public surface',
+    page.url().includes('/sign-in') &&
+      !(await page.evaluate(() => document.body.innerText.includes('Brand guidelines'))),
+    page.url(),
+  )
+  await page.goto(`${BASE}/sign-in`, { waitUntil: 'networkidle2' })
   await page.focus('#username')
   await page.type('#username', env.ADMIN_USERNAME)
   await page.type('#password', env.ADMIN_PASSWORD)

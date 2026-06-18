@@ -127,13 +127,6 @@
   height: 16px;
 }
 
-.fc-guide-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .fc-kicker {
   margin: 0;
   color: var(--fc-blue);
@@ -406,7 +399,6 @@
 }
 
 .fc-intro-panel h1,
-.fc-guide-hero h1,
 .fc-section-heading h2 {
   margin: 12px 0 0;
   color: var(--fc-ink);
@@ -417,8 +409,7 @@
   letter-spacing: 0;
 }
 
-.fc-lead,
-.fc-guide-hero p {
+.fc-lead {
   max-width: 660px;
   margin: 18px 0 0;
   color: var(--fc-muted);
@@ -434,10 +425,7 @@
 }
 
 .fc-product-card,
-.fc-login-card,
-.fc-guide-card,
-.fc-swatch-card,
-.fc-rule-list li {
+.fc-login-card {
   border: 1px solid var(--fc-line);
   border-radius: 8px;
   background: #ffffff;
@@ -723,78 +711,9 @@
   font-weight: 700;
 }
 
-.fc-guidelines {
-  padding-bottom: 72px;
-}
-
-.fc-guide-hero,
 .fc-section-block {
   width: min(1120px, calc(100% - 40px));
   margin: 24px auto 0;
-}
-
-.fc-guide-hero {
-  border: 1px solid var(--fc-line);
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 44px;
-}
-
-.fc-guide-grid {
-  width: min(1120px, calc(100% - 40px));
-  margin: 20px auto 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.fc-guide-card {
-  padding: 24px;
-}
-
-.fc-guide-card-wide {
-  grid-column: span 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-}
-
-.fc-card-label {
-  margin: 0;
-  color: var(--fc-muted);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0;
-}
-
-.fc-guide-card h2 {
-  margin: 8px 0 0;
-  color: var(--fc-ink);
-  font-family: "Inter Tight", Inter, system-ui, sans-serif;
-  font-size: 22px;
-  line-height: 1.2;
-  letter-spacing: 0;
-}
-
-.fc-guide-card h2 span {
-  color: var(--fc-blue);
-}
-
-.fc-guide-logo {
-  width: min(460px, 100%);
-}
-
-.fc-guide-mark {
-  width: 96px;
-  height: 96px;
-  margin: 22px 0;
-}
-
-.fc-card-copy {
-  margin: 18px 0 0;
-  color: var(--fc-muted);
-  font-size: 14px;
-  line-height: 1.55;
 }
 
 .fc-section-block {
@@ -1007,68 +926,6 @@
   width: 160px;
 }
 
-.fc-palette-grid {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.fc-swatch-card {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  gap: 14px;
-  padding: 16px;
-}
-
-.fc-swatch {
-  width: 54px;
-  height: 54px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 8px;
-}
-
-.fc-swatch-card h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.fc-swatch-card p,
-.fc-swatch-card span {
-  display: block;
-  margin: 3px 0 0;
-  color: var(--fc-muted);
-  font-size: 12.5px;
-}
-
-.fc-rule-list {
-  margin: 20px 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.fc-rule-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 16px;
-  color: var(--fc-text);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.fc-rule-list svg {
-  flex: none;
-  width: 17px;
-  height: 17px;
-  color: var(--fc-green);
-  margin-top: 2px;
-}
-
 @media (max-width: 980px) {
   .fc-site-nav {
     position: static;
@@ -1109,9 +966,6 @@
     max-width: 520px;
   }
 
-  .fc-guide-grid,
-  .fc-palette-grid,
-  .fc-rule-list,
   .fc-logo-cloud,
   .fc-control-section,
   .fc-builder-strip {
@@ -1130,10 +984,6 @@
     border-right: 0;
   }
 
-  .fc-guide-card-wide {
-    grid-column: auto;
-  }
-
   .fc-final-cta {
     align-items: flex-start;
     flex-direction: column;
@@ -1145,8 +995,6 @@
   .fc-site-nav,
   .fc-signin-grid,
   .fc-hero-content,
-  .fc-guide-hero,
-  .fc-guide-grid,
   .fc-section-block,
   .fc-logo-cloud,
   .fc-metrics-band,
@@ -1215,12 +1063,7 @@
     margin-top: 10px;
   }
 
-  .fc-guide-hero {
-    padding: 28px;
-  }
-
-  .fc-intro-panel h1,
-  .fc-guide-hero h1 {
+  .fc-intro-panel h1 {
     font-size: 34px;
   }
 

@@ -171,10 +171,12 @@ try {
     'Three surfaces',
   ])
 
-  await openPublicRoute(page, '/brand-guidelines', '.fc-guide-hero', [
-    'Brand guidelines',
-    'Simple, financial, controlled.',
-  ])
+  await page.goto(`${BASE}/brand-guidelines?v=${Date.now()}`, { waitUntil: 'networkidle2', timeout: 45000 })
+  check(
+    '/brand-guidelines is not a public brand page',
+    page.url().includes('/sign-in') && !(await page.evaluate(() => document.body.innerText.includes('Brand guidelines'))),
+    page.url(),
+  )
 
   await page.goto(`${BASE}/sign-in`, { waitUntil: 'networkidle2', timeout: 45000 })
   await page.type('#username', env.ADMIN_USERNAME)

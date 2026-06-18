@@ -78,7 +78,6 @@ export function HomePage() {
         <nav className="fc-nav-links" aria-label="Primary">
           <a href="#platform">Platform</a>
           <a href="#control">Control</a>
-          <a href="/brand-guidelines">Brand</a>
         </nav>
         <a className="fc-button fc-button-primary fc-nav-action" href="/sign-in">
           Sign in
@@ -134,9 +133,6 @@ export function HomePage() {
             <a className="fc-button fc-button-primary" href="/sign-in">
               Enter studio
               <ArrowRight aria-hidden="true" />
-            </a>
-            <a className="fc-button fc-button-secondary" href="/brand-guidelines">
-              View brand system
             </a>
           </div>
         </div>
